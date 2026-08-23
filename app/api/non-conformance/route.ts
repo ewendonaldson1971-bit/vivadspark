@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { qualityEventJobNumber } from "../../../lib/quality-event-reference";
+import { resolveQualitySheetColumns } from "../../../lib/quality-sheet-columns";
 
 const SHEET_ID = "1aKVB1RjaQSoEW9yw14YJ2asSrsSwDDR3EB2KnSfPRMc";
 const SHEET_GID = "407617143";
@@ -111,31 +112,34 @@ export async function GET() {
     }
 
     const csv = await response.text();
-    const [, ...dataRows] = parseCsv(csv);
+    const [headerRow = [], ...dataRows] = parseCsv(csv);
+    const columns = resolveQualitySheetColumns(headerRow);
     const events = dataRows
       .filter((row) => row.some((cell) => clean(cell)))
       .map((row, index) => {
         const sourceRowNumber = index + 2;
-        const jobNumber = qualityEventJobNumber(row[5], row[4], sourceRowNumber);
+        const jobNumber = qualityEventJobNumber(row[columns.jobNumber], row[columns.date], sourceRowNumber);
         return {
           id: `${jobNumber}-${sourceRowNumber}`,
-          status: normaliseStatus(row[0]),
-          progression: clean(row[1]),
-          category: normaliseCategory(row[2]),
-          origin: normaliseOrigin(row[3]),
-          date: parseDate(row[4]),
-          dateLabel: clean(row[4]) || "Date not recorded",
+          status: normaliseStatus(row[columns.status]),
+          progression: clean(row[columns.progression]),
+          category: normaliseCategory(row[columns.category]),
+          origin: normaliseOrigin(row[columns.origin]),
+          date: parseDate(row[columns.date]),
+          dateLabel: clean(row[columns.date]) || "Date not recorded",
+          dateClosed: parseDate(row[columns.dateClosed]),
+          dateClosedLabel: clean(row[columns.dateClosed]) || "Not closed",
           jobNumber,
-          department: clean(row[6]) || "Unclassified",
-          reportedBy: clean(row[7]) || "Unassigned",
-          assignedTo: clean(row[8]) || "Unassigned",
-          description: clean(row[9]) || "No description recorded",
-          severity: Number.parseInt(clean(row[10]), 10) || null,
-          rootCause: clean(row[11]),
-          action: clean(row[12]),
-          remediationCost: clean(row[13]),
-          sopOutcome: clean(row[14]),
-          processed: clean(row[15]),
+          department: clean(row[columns.department]) || "Unclassified",
+          reportedBy: clean(row[columns.reportedBy]) || "Unassigned",
+          assignedTo: clean(row[columns.assignedTo]) || "Unassigned",
+          description: clean(row[columns.description]) || "No description recorded",
+          severity: Number.parseInt(clean(row[columns.severity]), 10) || null,
+          rootCause: clean(row[columns.rootCause]),
+          action: clean(row[columns.action]),
+          remediationCost: clean(row[columns.remediationCost]),
+          sopOutcome: clean(row[columns.sopOutcome]),
+          processed: clean(row[columns.processed]),
         };
       });
 

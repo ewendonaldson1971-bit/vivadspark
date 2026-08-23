@@ -102,6 +102,7 @@ test("includes the live Non-Conformance Event workspace", async () => {
   assert.match(page, /\/training\?video=/);
   assert.match(route, /export\?format=csv&gid=/);
   assert.match(route, /normaliseStatus/);
+  assert.match(route, /resolveQualitySheetColumns/);
   assert.match(route, /NextResponse\.json/);
   assert.match(css, /\.quality-kpis/);
   assert.match(css, /\.quality-table/);

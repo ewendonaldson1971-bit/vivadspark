@@ -1,4 +1,4 @@
-type TrendEvent = { date: string | null; status: string };
+type TrendEvent = { date: string | null; dateClosed: string | null };
 
 export type MonthlyQualityTrend = {
   key: string;
@@ -20,10 +20,11 @@ function monthKey(value: Date) {
 export function buildQualityMonthlyTrend(events: TrendEvent[], now = new Date(), start = QUALITY_TREND_START) {
   const firstMonth = monthStart(start);
   const latestEventMonth = events.reduce((latest, event) => {
-    if (!event.date) return latest;
-    const eventDate = new Date(event.date);
-    if (Number.isNaN(eventDate.getTime())) return latest;
-    return eventDate > latest ? eventDate : latest;
+    const dates = [event.date, event.dateClosed]
+      .filter((value): value is string => Boolean(value))
+      .map((value) => new Date(value))
+      .filter((value) => !Number.isNaN(value.getTime()));
+    return dates.reduce((latestDate, eventDate) => eventDate > latestDate ? eventDate : latestDate, latest);
   }, firstMonth);
   const finalMonth = monthStart(latestEventMonth > now ? latestEventMonth : now);
   const months = new Map<string, MonthlyQualityTrend>();
@@ -38,13 +39,20 @@ export function buildQualityMonthlyTrend(events: TrendEvent[], now = new Date(),
   }
 
   events.forEach((event) => {
-    if (!event.date) return;
-    const date = new Date(event.date);
-    if (Number.isNaN(date.getTime()) || date < firstMonth) return;
-    const month = months.get(monthKey(date));
-    if (!month) return;
-    if (event.status === "Completed") month.closed += 1;
-    else month.open += 1;
+    if (event.date) {
+      const openedDate = new Date(event.date);
+      if (!Number.isNaN(openedDate.getTime()) && openedDate >= firstMonth) {
+        const openedMonth = months.get(monthKey(openedDate));
+        if (openedMonth) openedMonth.open += 1;
+      }
+    }
+    if (event.dateClosed) {
+      const closedDate = new Date(event.dateClosed);
+      if (!Number.isNaN(closedDate.getTime()) && closedDate >= firstMonth) {
+        const closedMonth = months.get(monthKey(closedDate));
+        if (closedMonth) closedMonth.closed += 1;
+      }
+    }
   });
 
   return Array.from(months.values());

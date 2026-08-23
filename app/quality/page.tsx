@@ -14,6 +14,8 @@ type QualityEvent = {
   origin: string;
   date: string | null;
   dateLabel: string;
+  dateClosed: string | null;
+  dateClosedLabel: string;
   jobNumber: string;
   department: string;
   reportedBy: string;
