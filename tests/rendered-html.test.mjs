@@ -88,6 +88,11 @@ test("includes the live Non-Conformance Event workspace", async () => {
 
   assert.match(page, /Non-Conformance Events/);
   assert.match(page, /Monthly trend/);
+  assert.match(page, /buildQualityMonthlyTrend/);
+  assert.match(page, /month\.open/);
+  assert.match(page, /month\.closed/);
+  assert.match(page, />Open</);
+  assert.match(page, />Closed</);
   assert.match(page, /All departments/);
   assert.match(page, /Let’s Problem Solve/);
   assert.match(sidebar, /Open source log/);

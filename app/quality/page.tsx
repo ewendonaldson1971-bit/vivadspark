@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MobileWorkspaceNavigation } from "../components/workspace-navigation";
 import { QUALITY_SHEET_LINK, QualityWorkspaceSidebar } from "../components/quality-workspace-sidebar";
+import { buildQualityMonthlyTrend } from "../../lib/quality-monthly-trend";
 
 type QualityEvent = {
   id: string;
@@ -225,25 +226,7 @@ export default function QualityPage() {
   }, [data.events]);
 
   const monthlyTrend = useMemo(() => {
-    const months = new Map<string, { label: string; count: number }>();
-    data.events.forEach((event) => {
-      if (!event.date) return;
-      const date = new Date(event.date);
-      const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-      const label = date.toLocaleDateString("en-AU", {
-        month: "short",
-        year: "2-digit",
-        timeZone: "UTC",
-      });
-      const current = months.get(key) ?? { label, count: 0 };
-      current.count += 1;
-      months.set(key, current);
-    });
-
-    return Array.from(months.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-10)
-      .map(([, value]) => value);
+    return buildQualityMonthlyTrend(data.events);
   }, [data.events]);
 
   const categoryMix = useMemo(() => {
@@ -257,7 +240,7 @@ export default function QualityPage() {
       .slice(0, 5);
   }, [data.events]);
 
-  const maxMonthly = Math.max(...monthlyTrend.map((month) => month.count), 1);
+  const maxMonthly = Math.max(...monthlyTrend.flatMap((month) => [month.open, month.closed]), 1);
   const maxCategory = Math.max(...categoryMix.map((item) => item.count), 1);
   const updatedLabel = data.refreshedAt
     ? new Date(data.refreshedAt).toLocaleTimeString("en-AU", {
@@ -362,13 +345,16 @@ export default function QualityPage() {
           <article className="quality-panel trend-panel">
             <div className="quality-panel-head">
               <div><span>EVENT FREQUENCY</span><h2>Monthly trend</h2></div>
-              <small>Latest 10 recorded months</small>
+              <div className="trend-legend" aria-label="Chart legend"><span><i className="open" />Open</span><span><i className="closed" />Closed</span></div>
             </div>
-            <div className="trend-chart" aria-label="Monthly event counts">
+            <div className="trend-chart" role="list" aria-label="Monthly open and closed event counts from August 2026">
               {monthlyTrend.map((month) => (
-                <div className="trend-column" key={month.label}>
-                  <span>{month.count}</span>
-                  <div><i style={{ height: `${Math.max(10, (month.count / maxMonthly) * 100)}%` }} /></div>
+                <div className="trend-column" role="listitem" key={month.key} aria-label={`${month.label}: ${month.open} open, ${month.closed} closed`}>
+                  <div className="trend-counts" aria-hidden="true"><span>{month.open}</span><span>{month.closed}</span></div>
+                  <div className="trend-bars" aria-hidden="true">
+                    <i className="open" style={{ height: `${month.open ? Math.max(10, (month.open / maxMonthly) * 100) : 0}%` }} />
+                    <i className="closed" style={{ height: `${month.closed ? Math.max(10, (month.closed / maxMonthly) * 100) : 0}%` }} />
+                  </div>
                   <small>{month.label.replace(" ", " ’")}</small>
                 </div>
               ))}
