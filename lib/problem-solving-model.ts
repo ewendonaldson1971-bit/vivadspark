@@ -1,4 +1,4 @@
-export const ISHIKAWA_CATEGORIES = ["People", "Process", "Equipment", "Materials", "Environment", "Measurement"] as const;
+export const ISHIKAWA_CATEGORIES = ["Method", "Machine", "People", "Environmental", "Measurement", "Materials"] as const;
 
 export type QualityEventSnapshot = {
   id: string; status: string; category: string; origin: string; dateLabel: string;
@@ -19,6 +19,14 @@ export type ProblemAnalysis = {
   researchAvailable: boolean;
   researchMessage: string;
 };
+
+export function normaliseIshikawaCauses(causes: CauseCategory[]) {
+  const aliases: Record<string, CauseCategory["category"]> = { Process: "Method", Equipment: "Machine", Environment: "Environmental" };
+  return ISHIKAWA_CATEGORIES.map((category): CauseCategory => {
+    const match = causes.find((cause) => (aliases[cause.category] ?? cause.category) === category);
+    return match ? { ...match, category } : { category, findings: [], evidenceGap: "Add and verify brainstorm evidence for this category." };
+  });
+}
 
 export function sanitiseTechnicalContext(event: QualityEventSnapshot, notes: string) {
   return {
@@ -65,15 +73,15 @@ export function buildInternalAnalysis(event: QualityEventSnapshot, notes: string
   const context = [event.description, notes].filter(Boolean).join(" ");
   const causes = ISHIKAWA_CATEGORIES.map((category): CauseCategory => ({
     category,
-    findings: category === "Process"
+    findings: category === "Method"
       ? [event.rootCause || "Review whether the documented method was available, understood and followed."]
-      : category === "Equipment"
+      : category === "Machine"
         ? ["Confirm equipment condition, settings and maintenance status at the time of the event."]
         : category === "Materials"
           ? ["Check material specification, batch condition, storage and handling history."]
           : category === "People"
             ? ["Confirm training, handover, workload and task ownership without attributing blame."]
-            : category === "Environment"
+            : category === "Environmental"
               ? ["Check workplace conditions, layout, lighting, temperature and interruptions."]
               : ["Confirm the measurement method, acceptance criteria and available records."],
     evidenceGap: "Insufficient evidence: validate this category with the people who performed the work and objective records.",

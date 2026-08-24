@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { buildInternalAnalysis, ISHIKAWA_CATEGORIES, sanitiseTechnicalContext, validateProblemAnalysis } from "../lib/problem-solving-model.ts";
+import { buildInternalAnalysis, ISHIKAWA_CATEGORIES, normaliseIshikawaCauses, sanitiseTechnicalContext, validateProblemAnalysis } from "../lib/problem-solving-model.ts";
 
 const event = {
   id: "NCE-42", status: "Open", category: "Defect", origin: "Internal", dateLabel: "21/08/2026",
@@ -17,12 +17,23 @@ test("sanitised AI context excludes personal names and job identifiers", () => {
 });
 
 test("fallback analysis covers every Ishikawa category without invented research", () => {
+  assert.deepEqual([...ISHIKAWA_CATEGORIES], ["Method", "Machine", "People", "Environmental", "Measurement", "Materials"]);
   const analysis = buildInternalAnalysis(event, "Check nozzle tests", "Research unavailable");
   assert.deepEqual(analysis.causes.map((cause) => cause.category), [...ISHIKAWA_CATEGORIES]);
   assert.ok(analysis.causes.every((cause) => /Insufficient evidence/i.test(cause.evidenceGap)));
   assert.equal(analysis.researchAvailable, false);
   assert.deepEqual(analysis.sources, []);
   assert.ok(validateProblemAnalysis(analysis));
+});
+
+test("legacy cause names are safely migrated into the interactive fishbone", () => {
+  const causes = normaliseIshikawaCauses([
+    { category: "Process", findings: ["Old method"], evidenceGap: "Check" },
+    { category: "Equipment", findings: ["Old machine"], evidenceGap: "Check" },
+    { category: "Environment", findings: ["Old environment"], evidenceGap: "Check" },
+  ]);
+  assert.deepEqual(causes.map((cause) => cause.category), [...ISHIKAWA_CATEGORIES]);
+  assert.deepEqual(causes.find((cause) => cause.category === "Method")?.findings, ["Old method"]);
 });
 
 test("problem-solving routes provide safe guest mode and authenticated persistence", async () => {
@@ -45,10 +56,15 @@ test("problem-solving routes provide safe guest mode and authenticated persisten
 
 test("workflow uses the live read-only event feed, device guest progress and editable plans", async () => {
   const client = await readFile(new URL("../app/lets-problem-solve/problem-solving-workflow.tsx", import.meta.url), "utf8");
+  const fishbone = await readFile(new URL("../app/lets-problem-solve/ishikawa-diagram.tsx", import.meta.url), "utf8");
   assert.match(client, /\/api\/non-conformance/);
   assert.match(client, /Run a new analysis version/);
   assert.match(client, /vivad-problem-plan:/);
   assert.match(client, /saved on this device/);
   assert.match(client, /Save action plan/);
   assert.match(client, /HISTORY & AUDIT/);
+  assert.match(fishbone, /Problem statement for the fish head/);
+  assert.match(fishbone, /Add brainstorm item/);
+  assert.match(fishbone, /Interactive Ishikawa fishbone diagram/);
+  assert.match(fishbone, /Method.*Machine.*People.*Materials.*Measurement.*Environmental/s);
 });
