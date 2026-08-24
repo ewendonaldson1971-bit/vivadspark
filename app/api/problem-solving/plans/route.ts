@@ -7,16 +7,15 @@ const priorities = new Set(["High", "Medium", "Low"]);
 
 export async function GET(request: Request) {
   const username = await getHoshinRequestUsername(request);
-  if (!username) return NextResponse.json({ error: "Sign in is required." }, { status: 401 });
   const eventId = new URL(request.url).searchParams.get("eventId")?.trim();
   if (!eventId) return NextResponse.json({ error: "An event reference is required." }, { status: 400 });
+  if (!username) return NextResponse.json({ history: [], storage: "device" }, { headers: { "Cache-Control": "no-store" } });
   try { return NextResponse.json({ history: await getProblemHistory(eventId) }, { headers: { "Cache-Control": "no-store" } }); }
   catch (error) { return storeError(error); }
 }
 
 export async function POST(request: Request) {
   const username = await getHoshinRequestUsername(request);
-  if (!username) return NextResponse.json({ error: "Sign in is required to save a problem-solving plan." }, { status: 401 });
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "The plan request is invalid." }, { status: 400 }); }
   const steps = Array.isArray(body.nextSteps) ? body.nextSteps : [];
@@ -24,9 +23,10 @@ export async function POST(request: Request) {
     || steps.some((step) => !step || typeof step !== "object" || typeof step.action !== "string" || !step.action.trim() || !priorities.has(String(step.priority)))) {
     return NextResponse.json({ error: "Add at least one complete next step before saving." }, { status: 400 });
   }
+  if (!username) return NextResponse.json({ result: { savedAt: new Date().toISOString(), persisted: false } }, { headers: { "Cache-Control": "no-store" } });
   try {
     const result = await savePlan({ analysisId: body.analysisId, qualityEventId: body.qualityEventId, selectedSolutionIds: body.selectedSolutionIds.map(String), nextSteps: steps as never }, username);
-    return NextResponse.json({ result }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ result: { ...result, persisted: true } }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return storeError(error); }
 }
 

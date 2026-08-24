@@ -24,11 +24,19 @@ function validEvent(value: unknown): value is QualityEventSnapshot {
 
 export async function POST(request: Request) {
   const username = await getHoshinRequestUsername(request);
-  if (!username) return NextResponse.json({ error: "Sign in is required to analyse a quality event." }, { status: 401 });
   let body: { event?: unknown; notes?: unknown };
   try { body = await request.json(); } catch { return NextResponse.json({ error: "The analysis request is invalid." }, { status: 400 }); }
   if (!validEvent(body.event)) return NextResponse.json({ error: "Select a valid quality event first." }, { status: 400 });
   const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 4000) : "";
+  if (!username) {
+    const analysis = buildInternalAnalysis(body.event, notes, "External research is unavailable in guest mode. This internal structured review must be verified with the affected team and objective records.");
+    return NextResponse.json({
+      analysis,
+      saved: { id: `device-${crypto.randomUUID()}`, version: 1, createdAt: new Date().toISOString() },
+      provider: "internal-rules",
+      persisted: false,
+    }, { headers: { "Cache-Control": "no-store" } });
+  }
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const model = process.env.OPENAI_PROBLEM_SOLVING_MODEL?.trim() || "gpt-5.4";
   let provider = "internal-rules";
@@ -61,7 +69,7 @@ export async function POST(request: Request) {
 
   try {
     const saved = await saveAnalysis(body.event, notes, analysis, username, provider, provider === "openai" ? model : "structured-review-v1");
-    return NextResponse.json({ analysis, saved, provider }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ analysis, saved, provider, persisted: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof ProblemSolvingConfigurationError) return NextResponse.json({ error: error.message }, { status: 503 });
     console.error("Problem-solving analysis failed", error);

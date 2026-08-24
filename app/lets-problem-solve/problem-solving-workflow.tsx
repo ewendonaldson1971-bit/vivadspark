@@ -4,6 +4,8 @@ import type { NextStep, ProblemAnalysis, QualityEventSnapshot } from "../../lib/
 
 type Saved = { id: string; version: number; createdAt: string };
 type History = { id: string; version: number; createdBy: string; createdAt: string; provider: string; planUpdatedAt: string | null };
+type DeviceProgress = { analysis: ProblemAnalysis; saved: Saved; selectedSolutionIds: string[]; nextSteps: NextStep[]; history: History[] };
+const DEVICE_PLAN_PREFIX = "vivad-problem-plan:";
 
 export function ProblemSolvingWorkflow() {
   const [events, setEvents] = useState<QualityEventSnapshot[]>([]), [query, setQuery] = useState(""), [selectedId, setSelectedId] = useState("");
@@ -20,17 +22,28 @@ export function ProblemSolvingWorkflow() {
     const next = events.find((item) => item.id === selectedId); if (!next) return;
     setEvent(next); setAnalysis(null); setSaved(null); setChosen([]); setSteps([]); setNotes(""); setHistory([]); setError(""); setMessage("");
     const response = await fetch(`/api/problem-solving/plans?eventId=${encodeURIComponent(next.id)}`, { credentials: "same-origin", cache: "no-store" });
-    const data = await response.json(); if (response.ok) setHistory(data.history ?? []); else if (response.status !== 503) setError(data.error || "History could not be loaded.");
+    const data = await response.json();
+    if (!response.ok) { if (response.status !== 503) setError(data.error || "History could not be loaded."); return; }
+    if (data.storage === "device") {
+      try {
+        const local = window.localStorage.getItem(`${DEVICE_PLAN_PREFIX}${next.id}`);
+        if (local) {
+          const progress = JSON.parse(local) as DeviceProgress;
+          setAnalysis(progress.analysis); setSaved(progress.saved); setChosen(progress.selectedSolutionIds); setSteps(progress.nextSteps); setHistory(progress.history);
+          setMessage("Previous guest progress was restored from this device.");
+        }
+      } catch { window.localStorage.removeItem(`${DEVICE_PLAN_PREFIX}${next.id}`); }
+    } else setHistory(data.history ?? []);
   }
   async function solve() {
     if (!event || busy || (analysis && !window.confirm("Run a new analysis version? The existing version will remain in history."))) return;
     setBusy(true); setError(""); setMessage("");
-    try { const response = await fetch("/api/problem-solving/analyse", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event, notes }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setAnalysis(data.analysis); setSaved(data.saved); setSteps(data.analysis.nextSteps); setChosen([]); setMessage(`Analysis version ${data.saved.version} was saved.`); setHistory((h) => [{ ...data.saved, createdBy: "You", provider: data.provider, planUpdatedAt: null }, ...h]); }
+    try { const response = await fetch("/api/problem-solving/analyse", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event, notes }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); const entry = { ...data.saved, createdBy: data.persisted === false ? "Guest on this device" : "You", provider: data.provider, planUpdatedAt: null }; setAnalysis(data.analysis); setSaved(data.saved); setSteps(data.analysis.nextSteps); setChosen([]); setMessage(data.persisted === false ? "Analysis ready. Guest progress will stay on this device." : `Analysis version ${data.saved.version} was saved.`); setHistory((h) => [entry, ...h]); if (data.persisted === false) window.localStorage.setItem(`${DEVICE_PLAN_PREFIX}${event.id}`, JSON.stringify({ analysis: data.analysis, saved: data.saved, selectedSolutionIds: [], nextSteps: data.analysis.nextSteps, history: [entry, ...history] } satisfies DeviceProgress)); }
     catch (e) { setError(e instanceof Error ? e.message : "The event could not be analysed."); } finally { setBusy(false); }
   }
   async function savePlan() {
     if (!event || !saved || busy) return; setBusy(true); setError(""); setMessage("");
-    try { const response = await fetch("/api/problem-solving/plans", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ analysisId: saved.id, qualityEventId: event.id, selectedSolutionIds: chosen, nextSteps: steps }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setMessage("The action plan was saved successfully."); }
+    try { const response = await fetch("/api/problem-solving/plans", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ analysisId: saved.id, qualityEventId: event.id, selectedSolutionIds: chosen, nextSteps: steps }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); const updatedHistory = history.map((item) => item.id === saved.id ? { ...item, planUpdatedAt: data.result.savedAt } : item); setHistory(updatedHistory); if (data.result.persisted === false && analysis) window.localStorage.setItem(`${DEVICE_PLAN_PREFIX}${event.id}`, JSON.stringify({ analysis, saved, selectedSolutionIds: chosen, nextSteps: steps, history: updatedHistory } satisfies DeviceProgress)); setMessage(data.result.persisted === false ? "The action plan was saved on this device." : "The action plan was saved successfully."); }
     catch (e) { setError(e instanceof Error ? e.message : "The action plan could not be saved."); } finally { setBusy(false); }
   }
   const updateStep = (index: number, change: Partial<NextStep>) => setSteps((all) => all.map((step, i) => i === index ? { ...step, ...change } : step));

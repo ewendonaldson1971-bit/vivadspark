@@ -25,7 +25,7 @@ test("fallback analysis covers every Ishikawa category without invented research
   assert.ok(validateProblemAnalysis(analysis));
 });
 
-test("problem-solving routes keep authentication, structured output and persistence server-side", async () => {
+test("problem-solving routes provide safe guest mode and authenticated persistence", async () => {
   const analyse = await readFile(new URL("../app/api/problem-solving/analyse/route.ts", import.meta.url), "utf8");
   const plans = await readFile(new URL("../app/api/problem-solving/plans/route.ts", import.meta.url), "utf8");
   const events = await readFile(new URL("../app/api/problem-solving/events/route.ts", import.meta.url), "utf8");
@@ -33,16 +33,22 @@ test("problem-solving routes keep authentication, structured output and persiste
   assert.match(analyse, /web_search/);
   assert.match(analyse, /json_schema/);
   assert.match(analyse, /saveAnalysis/);
+  assert.match(analyse, /External research is unavailable in guest mode/);
+  assert.match(analyse, /persisted:\s*false/);
   assert.match(plans, /savePlan/);
   assert.match(plans, /getProblemHistory/);
+  assert.match(plans, /storage:\s*"device"/);
+  assert.match(plans, /persisted:\s*false/);
   assert.match(events, /getHoshinRequestUsername/);
   assert.match(events, /status:\s*401/);
 });
 
-test("workflow uses the live read-only event feed, version confirmation and editable plans", async () => {
+test("workflow uses the live read-only event feed, device guest progress and editable plans", async () => {
   const client = await readFile(new URL("../app/lets-problem-solve/problem-solving-workflow.tsx", import.meta.url), "utf8");
   assert.match(client, /\/api\/non-conformance/);
   assert.match(client, /Run a new analysis version/);
+  assert.match(client, /vivad-problem-plan:/);
+  assert.match(client, /saved on this device/);
   assert.match(client, /Save action plan/);
   assert.match(client, /HISTORY & AUDIT/);
 });
