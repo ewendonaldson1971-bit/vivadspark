@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatSydneyPortalDateTime } from "../lib/portal-date-time";
 import { MobileWorkspaceNavigation } from "./components/workspace-navigation";
 
 type DashboardMetric = {
@@ -87,6 +88,7 @@ function metricFromError(): DashboardMetric {
 }
 
 export default function HomePage() {
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [username, setUsername] = useState("Signed-in user");
   const [metrics, setMetrics] = useState<Record<string, DashboardMetric>>({
     compliance: initialMetric,
@@ -94,6 +96,13 @@ export default function HomePage() {
     quality: initialMetric,
     videos: initialMetric,
   });
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTime(new Date());
+    updateTime();
+    const timer = window.setInterval(updateTime, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let current = true;
@@ -208,6 +217,9 @@ export default function HomePage() {
           <img src="/vivad-logo.png" alt="Vivad SPARK — Hoshin, Continuous Improvement" />
         </Link>
         <MobileWorkspaceNavigation />
+        <time className="portal-date-time" dateTime={currentTime?.toISOString()} title="Current date and time in Sydney">
+          {currentTime ? formatSydneyPortalDateTime(currentTime) : ""}
+        </time>
         <Link className="portal-profile" href="/hoshin-logout" aria-label={`Signed in as ${username}. Sign out`}>
           <span aria-hidden="true">{initials(username)}</span>
           <strong>{username}</strong>

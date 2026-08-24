@@ -51,6 +51,8 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   ]);
 
   assert.match(page, /Where would you like to go\?/);
+  assert.match(page, /formatSydneyPortalDateTime/);
+  assert.match(page, /Current date and time in Sydney/);
   assert.match(page, /href: "\/quality"/);
   assert.match(page, /href: "\/vivadocs\?view=skills"/);
   assert.match(page, /href: "\/vivadocs\?view=library"/);
@@ -73,6 +75,7 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   assert.match(vivadocs, /requestedView === "library"/);
   assert.match(training, /get\("upload"\) === "1"/);
   assert.match(css, /\.portal-destinations/);
+  assert.match(css, /\.portal-date-time/);
   assert.match(css, /\.portal-destination:focus-visible/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(max-width: 700px\)/);

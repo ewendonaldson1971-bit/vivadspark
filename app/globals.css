@@ -647,6 +647,7 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 }
 .portal-brand { display: inline-flex; align-items: center; text-decoration: none; }
 .portal-brand img { display: block; width: clamp(150px, 16vw, 205px); height: auto; }
+.portal-date-time { min-width: 250px; margin-left: auto; color: #555c65; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .portal-profile {
   display: inline-flex;
   align-items: center;
@@ -763,7 +764,8 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .portal-support { display: none; }
 }
 @media (max-width: 700px) {
-  .portal-header { min-height: 64px; padding-inline: 18px; }
+  .portal-header { position: relative; min-height: 86px; padding: 10px 18px 30px; }
+  .portal-date-time { position: absolute; right: 18px; bottom: 8px; min-width: 0; margin: 0; font-size: 9px; }
   .portal-profile strong, .portal-profile i { display: none; }
   .portal-welcome { padding: 38px 0 34px; }
   .portal-container { width: min(100% - 28px, 1100px); }
