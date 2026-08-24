@@ -28,18 +28,20 @@ test("fallback analysis covers every Ishikawa category without invented research
 test("problem-solving routes keep authentication, structured output and persistence server-side", async () => {
   const analyse = await readFile(new URL("../app/api/problem-solving/analyse/route.ts", import.meta.url), "utf8");
   const plans = await readFile(new URL("../app/api/problem-solving/plans/route.ts", import.meta.url), "utf8");
+  const events = await readFile(new URL("../app/api/problem-solving/events/route.ts", import.meta.url), "utf8");
   assert.match(analyse, /getHoshinRequestUsername/);
   assert.match(analyse, /web_search/);
   assert.match(analyse, /json_schema/);
   assert.match(analyse, /saveAnalysis/);
   assert.match(plans, /savePlan/);
   assert.match(plans, /getProblemHistory/);
+  assert.match(events, /getHoshinRequestUsername/);
+  assert.match(events, /status:\s*401/);
 });
 
-test("workflow uses live events, same-origin credentials, version confirmation and editable plans", async () => {
+test("workflow uses the live read-only event feed, version confirmation and editable plans", async () => {
   const client = await readFile(new URL("../app/lets-problem-solve/problem-solving-workflow.tsx", import.meta.url), "utf8");
-  assert.match(client, /\/api\/problem-solving\/events/);
-  assert.match(client, /credentials: "same-origin"/);
+  assert.match(client, /\/api\/non-conformance/);
   assert.match(client, /Run a new analysis version/);
   assert.match(client, /Save action plan/);
   assert.match(client, /HISTORY & AUDIT/);

@@ -12,7 +12,7 @@ export function ProblemSolvingWorkflow() {
   const [chosen, setChosen] = useState<string[]>([]), [steps, setSteps] = useState<NextStep[]>([]), [history, setHistory] = useState<History[]>([]);
   const [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [error, setError] = useState(""), [message, setMessage] = useState("");
 
-  useEffect(() => { fetch("/api/problem-solving/events", { credentials: "same-origin", cache: "no-store" }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }).then((d) => setEvents(d.events ?? [])).catch((e) => setError(e.message || "Quality events could not be loaded.")).finally(() => setLoading(false)); }, []);
+  useEffect(() => { fetch("/api/non-conformance", { cache: "no-store" }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }).then((d) => setEvents(d.events ?? [])).catch((e) => setError(e.message || "Quality events could not be loaded.")).finally(() => setLoading(false)); }, []);
   const matches = useMemo(() => { const q = query.trim().toLowerCase(); return events.filter((item) => !q || [item.id, item.jobNumber, item.description, item.department, item.category].some((v) => String(v).toLowerCase().includes(q))).slice(0, 60); }, [events, query]);
   const stage = analysis ? (chosen.length ? 4 : 3) : event ? 2 : 1;
 
