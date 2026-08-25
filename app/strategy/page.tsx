@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { MobileWorkspaceNavigation, navigationItem, WorkspaceNavigationId } from "../components/workspace-navigation";
 
-type View = "Overview" | "X-matrix" | "Scorecards" | "Initiatives" | "Reviews" | "People" | "Settings";
+type View = "Overview" | "Safety" | "Quality" | "Delivery" | "Scorecards" | "People" | "Settings";
 
 type Initiative = {
   title: string;
@@ -15,45 +15,40 @@ type Initiative = {
   due: string;
 };
 
-const objectives = [
-  {
-    code: "O1",
-    title: "Become the easiest partner to do business with",
-    owner: "Customer",
-    progress: 78,
-    tone: "blue",
-  },
-  {
-    code: "O2",
-    title: "Build a predictable, scalable delivery engine",
-    owner: "Operations",
-    progress: 64,
-    tone: "red",
-  },
-  {
-    code: "O3",
-    title: "Create a high-trust, high-performance culture",
-    owner: "People",
-    progress: 71,
-    tone: "green",
-  },
-];
+const DEPARTMENTS = ["All departments", "CST", "Prepress", "Printers", "Cutters", "Fab1", "Framing", "Sew", "Light Box", "Office", "Despatch"] as const;
+const STRATEGY_DEPARTMENT_KEY = "vivad-strategy-department";
+type Department = typeof DEPARTMENTS[number];
 
-const keyResults = [
-  { metric: "Customer effort score", target: "≤ 2.0", actual: "2.3", trend: "↓ 0.4", status: "At risk" },
-  { metric: "On-time delivery", target: "96%", actual: "94.8%", trend: "↑ 1.8%", status: "Watch" },
-  { metric: "First-time-right quality", target: "98%", actual: "98.6%", trend: "↑ 0.7%", status: "On track" },
-  { metric: "Team engagement", target: "82", actual: "84", trend: "↑ 3", status: "On track" },
-];
-
-const matrixRows = [
-  { label: "Effortless customer experience", values: [3, 2, 0, 1] },
-  { label: "Reliable delivery system", values: [1, 3, 3, 2] },
-  { label: "Empowered frontline teams", values: [2, 1, 2, 3] },
-];
+function teamPlan(department: Department) {
+  const team = department === "All departments" ? "Vivad" : department;
+  const seed = DEPARTMENTS.indexOf(department);
+  return {
+    team,
+    eyebrow: department === "All departments" ? "FY2026 CORPORATE PLAN" : `FY2026 ${department.toUpperCase()} TEAM PLAN`,
+    trueNorth: department === "All departments" ? ["Make progress visible.", "Make action inevitable."] : [`${department} works safely.`, `${department} delivers right first time.`],
+    description: department === "All departments" ? "We turn strategy into a small set of measurable priorities, connect every action to an outcome, and review progress before problems become surprises." : `${department} can see its own Safety, Quality and Delivery priorities, measures and actions in one deployment screen.`,
+    objectives: [
+      { code: "S", title: `Ensure everyone in ${team} goes home safe`, owner: "Safety", progress: 82 - seed % 9, tone: "green" },
+      { code: "Q", title: `Build right-first-time quality into ${team}`, owner: "Quality", progress: 76 - seed % 8, tone: "red" },
+      { code: "D", title: `${team} delivers the customer promise every day`, owner: "Delivery", progress: 79 - seed % 7, tone: "blue" },
+    ],
+    keyResults: [
+      { metric: `${team} safety actions closed`, target: "100%", actual: `${94 - seed % 5}%`, trend: "↑ 2%", status: seed % 3 === 0 ? "Watch" : "On track" },
+      { metric: `${team} first-time-right quality`, target: "98%", actual: `${96 + seed % 3}.2%`, trend: "↑ 0.7%", status: "On track" },
+      { metric: `${team} on-time delivery`, target: "96%", actual: `${93 + seed % 4}.8%`, trend: "↑ 1.8%", status: seed % 2 ? "Watch" : "On track" },
+      { metric: `${team} SOP and training compliance`, target: "100%", actual: `${91 + seed % 7}%`, trend: "↑ 3%", status: "On track" },
+    ],
+    safetyRows: [
+      { label: `${team} critical risk controls`, values: [3, 2, 1, 3] },
+      { label: `${team} hazard and action closure`, values: [2, 3, 2, 1] },
+      { label: `${team} safe work capability`, values: [1, 2, 3, 2] },
+    ],
+  };
+}
 
 export default function Home() {
   const [view, setView] = useState<View>("Overview");
+  const [department, setDepartment] = useState<Department>("All departments");
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -65,17 +60,28 @@ export default function Home() {
     { title: "Skills matrix rollout", owner: "Ava Brooks", progress: 47, status: "On track", due: "28 Oct" },
   ]);
 
+  const plan = useMemo(() => teamPlan(department), [department]);
+
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("view") as View | null;
-    if (requested && ["Scorecards", "Initiatives", "Reviews", "People", "Settings"].includes(requested)) {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("view");
+    const legacyViews: Record<string, View> = { "X-matrix": "Safety", Initiatives: "Quality", Reviews: "Delivery" };
+    const requestedView = requested ? legacyViews[requested] ?? requested : null;
+    if (requestedView && ["Safety", "Quality", "Delivery", "Scorecards", "People", "Settings"].includes(requestedView)) {
       // Restore the directly linked workspace section after client hydration.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setView(requested);
+      setView(requestedView as View);
+    }
+    const requestedDepartment = params.get("department");
+    const savedDepartment = window.localStorage.getItem(STRATEGY_DEPARTMENT_KEY);
+    const initialDepartment = requestedDepartment || savedDepartment;
+    if (initialDepartment && DEPARTMENTS.includes(initialDepartment as Department)) {
+      setDepartment(initialDepartment as Department);
     }
   }, []);
 
   const activeNavigation: WorkspaceNavigationId =
-    view === "Scorecards" ? "scorecards" : view === "Initiatives" ? "initiatives" : view === "Reviews" ? "reviews" : view === "People" ? "people" : view === "Settings" ? "settings" : "strategy";
+    view === "Scorecards" ? "scorecards" : view === "Quality" ? "initiatives" : view === "Delivery" ? "reviews" : view === "People" ? "people" : view === "Settings" ? "settings" : "strategy";
 
   const visibleInitiatives = useMemo(
     () => initiatives.filter((item) => filter === "All" || item.status === filter),
@@ -94,8 +100,15 @@ export default function Home() {
       { title, owner, progress: 0, status: "On track", due: "30 Nov" },
     ]);
     setModalOpen(false);
-    setView("Initiatives");
-    setNotice(`Initiative added — ${title}`);
+    setView("Quality");
+    setNotice(`Quality action added — ${title}`);
+    window.setTimeout(() => setNotice(""), 3200);
+  }
+
+  function changeDepartment(nextDepartment: Department) {
+    setDepartment(nextDepartment);
+    window.localStorage.setItem(STRATEGY_DEPARTMENT_KEY, nextDepartment);
+    setNotice(`${nextDepartment === "All departments" ? "Corporate" : nextDepartment} strategy deployment loaded`);
     window.setTimeout(() => setNotice(""), 3200);
   }
 
@@ -121,11 +134,11 @@ export default function Home() {
             <span className="nav-icon">◎</span> Scorecards
           </Link>
           <Link className={activeNavigation === "initiatives" ? "nav-item active" : "nav-item"} href={navigationItem("initiatives").href}>
-            <span className="nav-icon">↗</span> Initiatives
+            <span className="nav-icon">↗</span> Quality
             <span className="nav-count">4</span>
           </Link>
           <Link className={activeNavigation === "reviews" ? "nav-item active" : "nav-item"} href={navigationItem("reviews").href}>
-            <span className="nav-icon">◷</span> Reviews
+            <span className="nav-icon">◷</span> Delivery
           </Link>
           <Link className="nav-item" href="/vivadocs">
             <span className="nav-icon">▤</span> VivaDocs
@@ -162,8 +175,8 @@ export default function Home() {
         <header className="topbar">
           <MobileWorkspaceNavigation activeItem={activeNavigation} />
           <div>
-            <span className="eyebrow">FY2026 CORPORATE PLAN</span>
-            <h1>Strategy deployment</h1>
+            <span className="eyebrow">{plan.eyebrow}</span>
+            <h1>{department === "All departments" ? "Strategy deployment" : `${department} strategy deployment`}</h1>
           </div>
           <div className="top-actions">
             <button className="icon-button" type="button" aria-label="Open notifications">
@@ -173,14 +186,14 @@ export default function Home() {
               Run monthly review
             </button>
             <button className="button button-primary" type="button" onClick={() => setModalOpen(true)}>
-              <span>＋</span> Add initiative
+              <span>＋</span> Add action
             </button>
           </div>
         </header>
 
         <div className="workspace-bar">
           <div className="tabs" role="tablist" aria-label="Strategy views">
-            {(["Overview", "X-matrix", "Initiatives", "Reviews"] as View[]).map((tab) => (
+            {(["Overview", "Safety", "Quality", "Delivery"] as View[]).map((tab) => (
               <button
                 className={view === tab ? "tab active" : "tab"}
                 type="button"
@@ -193,13 +206,21 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <label className="period-control">
-            <span>Planning period</span>
-            <select defaultValue="FY2026" aria-label="Planning period">
-              <option>FY2026</option>
-              <option>FY2025</option>
-            </select>
-          </label>
+          <div className="strategy-controls">
+            <label className="department-control">
+              <span>Department</span>
+              <select value={department} aria-label="Strategy department" onChange={(event) => changeDepartment(event.target.value as Department)}>
+                {DEPARTMENTS.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="period-control">
+              <span>Planning period</span>
+              <select defaultValue="FY2026" aria-label="Planning period">
+                <option>FY2026</option>
+                <option>FY2025</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         {view === "Overview" && (
@@ -213,19 +234,16 @@ export default function Home() {
                     </span>
                     True north
                   </span>
-                  <h2>Make progress visible.<br />Make action inevitable.</h2>
+                  <h2>{plan.trueNorth[0]}<br />{plan.trueNorth[1]}</h2>
                 </div>
                 <div className="confidence">
                   <div className="score-ring"><span>72</span><small>%</small></div>
                   <div><strong>Plan confidence</strong><small>Up 6% this quarter</small></div>
                 </div>
               </div>
-              <p className="north-copy">
-                We turn strategy into a small set of measurable priorities, connect every initiative
-                to an outcome, and review progress before problems become surprises.
-              </p>
+              <p className="north-copy">{plan.description}</p>
               <div className="objective-grid">
-                {objectives.map((objective) => (
+                {plan.objectives.map((objective) => (
                   <article className={`objective ${objective.tone}`} key={objective.code}>
                     <div className="objective-top">
                       <span className="objective-code">{objective.code}</span>
@@ -273,7 +291,7 @@ export default function Home() {
                 <div className="result-row result-head" role="row">
                   <span>Measure</span><span>Target</span><span>Actual</span><span>Trend</span><span>Status</span>
                 </div>
-                {keyResults.map((result) => (
+                {plan.keyResults.map((result) => (
                   <div className="result-row" role="row" key={result.metric}>
                     <strong>{result.metric}</strong>
                     <span>{result.target}</span>
@@ -295,18 +313,18 @@ export default function Home() {
           </section>
         )}
 
-        {view === "X-matrix" && (
+        {view === "Safety" && (
           <section className="single-view">
             <div className="page-intro">
-              <div><span className="section-kicker red">Alignment view</span><h2>FY2026 X-matrix</h2></div>
-              <p>See how breakthrough objectives connect to annual priorities and accountable leaders.</p>
+              <div><span className="section-kicker red">Safety deployment</span><h2>{plan.team} safety priorities</h2></div>
+              <p>See how critical risks connect to controls, actions and team capability.</p>
             </div>
             <article className="card matrix-card">
               <div className="matrix-head">
-                <span>Strategic objective</span>
-                <span>Customer trust</span><span>Flow</span><span>Quality</span><span>Capability</span>
+                <span>Safety priority</span>
+                <span>Critical risks</span><span>Controls</span><span>Actions</span><span>Capability</span>
               </div>
-              {matrixRows.map((row) => (
+              {plan.safetyRows.map((row) => (
                 <div className="matrix-row" key={row.label}>
                   <strong>{row.label}</strong>
                   {row.values.map((value, index) => (
@@ -321,22 +339,22 @@ export default function Home() {
 
         {view === "Scorecards" && (
           <section className="single-view">
-            <div className="page-intro"><div><span className="section-kicker red">Outcome measures</span><h2>Corporate scorecards</h2></div><p>Current performance against the FY2026 measures.</p></div>
-            <div className="initiative-grid">{keyResults.map((result) => <article className="card initiative-card" key={result.metric}><span className={`status-pill ${result.status.toLowerCase().replace(" ", "-")}`}>{result.status}</span><h3>{result.metric}</h3><div className="activity-stat"><strong>{result.actual}</strong><span>Target<br />{result.target}</span></div><p className="due-row"><span>Trend</span><strong>{result.trend}</strong></p></article>)}</div>
+            <div className="page-intro"><div><span className="section-kicker red">Outcome measures</span><h2>{plan.team} scorecards</h2></div><p>Current performance against the selected FY2026 team measures.</p></div>
+            <div className="initiative-grid">{plan.keyResults.map((result) => <article className="card initiative-card" key={result.metric}><span className={`status-pill ${result.status.toLowerCase().replace(" ", "-")}`}>{result.status}</span><h3>{result.metric}</h3><div className="activity-stat"><strong>{result.actual}</strong><span>Target<br />{result.target}</span></div><p className="due-row"><span>Trend</span><strong>{result.trend}</strong></p></article>)}</div>
           </section>
         )}
 
-        {view === "Initiatives" && (
+        {view === "Quality" && (
           <section className="single-view">
             <div className="page-intro">
-              <div><span className="section-kicker red">Execution portfolio</span><h2>Strategic initiatives</h2></div>
+              <div><span className="section-kicker red">Quality improvement</span><h2>{plan.team} quality actions</h2></div>
               <div className="filter-row">
                 <label>Status
                   <select value={filter} onChange={(event) => setFilter(event.target.value)}>
                     <option>All</option><option>On track</option><option>At risk</option>
                   </select>
                 </label>
-                <button className="button button-primary" type="button" onClick={() => setModalOpen(true)}>＋ Add initiative</button>
+                <button className="button button-primary" type="button" onClick={() => setModalOpen(true)}>＋ Add action</button>
               </div>
             </div>
             <div className="initiative-grid">
@@ -354,11 +372,11 @@ export default function Home() {
           </section>
         )}
 
-        {view === "Reviews" && (
+        {view === "Delivery" && (
           <section className="single-view">
             <div className="page-intro">
-              <div><span className="section-kicker red">Review cadence</span><h2>Monthly strategy room</h2></div>
-              <button className="button button-primary" type="button" onClick={() => setReviewOpen(true)}>Start September review</button>
+              <div><span className="section-kicker red">Delivery cadence</span><h2>{plan.team} delivery review</h2></div>
+              <button className="button button-primary" type="button" onClick={() => setReviewOpen(true)}>Start September delivery review</button>
             </div>
             <article className="card timeline-card">
               {[
@@ -393,13 +411,13 @@ export default function Home() {
           <section className="modal" role="dialog" aria-modal="true" aria-labelledby="initiative-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" type="button" aria-label="Close" onClick={() => setModalOpen(false)}>×</button>
             <span className="section-kicker red">New work item</span>
-            <h2 id="initiative-title">Add strategic initiative</h2>
-            <p>Connect a focused piece of work to the FY2026 plan.</p>
+            <h2 id="initiative-title">Add {plan.team} quality action</h2>
+            <p>Connect a focused piece of work to the selected team plan.</p>
             <form onSubmit={addInitiative}>
-              <label>Initiative title<input name="title" placeholder="e.g. Simplify quote approval" autoFocus required /></label>
+              <label>Action title<input name="title" placeholder="e.g. Simplify quote approval" autoFocus required /></label>
               <label>Accountable owner<input name="owner" placeholder="Full name" required /></label>
-              <label>Linked objective<select defaultValue="O1"><option value="O1">O1 · Customer experience</option><option value="O2">O2 · Delivery engine</option><option value="O3">O3 · People and culture</option></select></label>
-              <div className="modal-actions"><button className="button button-ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="button button-primary" type="submit">Add initiative</button></div>
+              <label>Linked priority<select defaultValue="Q"><option value="S">Safety</option><option value="Q">Quality</option><option value="D">Delivery</option></select></label>
+              <div className="modal-actions"><button className="button button-ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="button button-primary" type="submit">Add action</button></div>
             </form>
           </section>
         </div>

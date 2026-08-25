@@ -200,7 +200,9 @@ h1, h2, h3 { margin: 0; color: var(--grey); font-family: "Cabin", "Open Sans", s
 .tab:hover { color: var(--ink); }
 .tab.active { color: var(--blue); }
 .tab.active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--blue); }
-.period-control { display: flex; align-items: center; gap: 10px; padding-bottom: 9px; color: var(--muted); font-size: 11px; }
+.strategy-controls { display: flex; align-items: center; gap: 14px; padding-bottom: 9px; }
+.period-control, .department-control { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.department-control select { min-width: 150px; }
 select {
   min-height: 36px;
   padding: 0 34px 0 14px;
@@ -387,7 +389,10 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .top-actions .icon-button { display: none; }
   .workspace-bar { align-items: center; overflow-x: auto; }
   .tabs { min-width: max-content; gap: 20px; }
+  .strategy-controls { padding-bottom: 0; }
   .period-control { display: none; }
+  .department-control span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .department-control select { min-width: 140px; }
   .card-heading, .page-intro { align-items: flex-start; flex-direction: column; }
   .confidence { min-width: 0; }
   .north-star { padding: 20px; }

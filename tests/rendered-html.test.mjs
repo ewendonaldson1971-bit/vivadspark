@@ -410,7 +410,7 @@ test("mobile workspace drawer covers routes, state and accessible closing behavi
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  for (const label of ["Strategy", "Quality events", "Let’s Problem Solve", "Training academy", "Scorecards", "Initiatives", "Reviews", "VivaDocs", "People", "Settings"]) {
+  for (const label of ["Strategy", "Quality events", "Let’s Problem Solve", "Training academy", "Scorecards", "Quality", "Delivery", "VivaDocs", "People", "Settings"]) {
     assert.match(navigation, new RegExp(`label: "${label}"`));
   }
   assert.match(navigation, /aria-expanded=\{open\}/);
@@ -438,8 +438,8 @@ test("mobile workspace drawer covers routes, state and accessible closing behavi
   assert.match(qualitySidebar, /^"use client";/);
   assert.ok(qualitySidebar.indexOf("Event log") < qualitySidebar.indexOf("problemSolveItem.label"));
   assert.match(qualitySidebar, /aria-current=\{!onQualityPage \? "page"/);
-  assert.match(strategy, /view === "Initiatives" \? "initiatives"/);
-  assert.match(strategy, /view === "Reviews" \? "reviews"/);
+  assert.match(strategy, /view === "Quality" \? "initiatives"/);
+  assert.match(strategy, /view === "Delivery" \? "reviews"/);
 });
 
 test("VivaDocs provides durable SOP creation, media and PDF workflows without QR links", async () => {
