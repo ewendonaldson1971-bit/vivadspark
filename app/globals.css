@@ -213,9 +213,8 @@ h1, h2, h3 { margin: 0; color: var(--grey); font-family: "Cabin", "Open Sans", s
 .five-s-summary-grid { display: grid; grid-template-columns: minmax(220px,.7fr) minmax(220px,.7fr) minmax(360px,1.6fr); gap: 18px; }
 .five-s-summary-card { min-height: 280px; padding: 24px; }
 .five-s-summary-card h3, .five-s-sheet-card h3 { margin-top: 6px; font-size: 22px; }
-.qr-placeholder { height: 175px; display: grid; place-items: center; align-content: center; gap: 9px; margin-top: 20px; border: 2px dashed #cad0d7; border-radius: 12px; background: #fafbfc; color: #8b9096; text-align: center; }
-.qr-placeholder span { display: grid; width: 58px; height: 58px; place-items: center; border-radius: 8px; background: #eef1f4; color: #676d74; font-size: 20px; font-weight: 700; }
-.qr-placeholder small { max-width: 150px; font-size: 10px; }
+.sort-qr-artwork { height: 190px; display: grid; place-items: center; margin-top: 12px; overflow: hidden; border: 1px solid #e2e5e9; border-radius: 12px; background: #fff; }
+.sort-qr-artwork img { width: 100%; height: 100%; object-fit: contain; }
 .score-card { display: flex; align-items: center; flex-direction: column; text-align: center; }
 .score-card .section-kicker { align-self: flex-start; }
 .five-s-score-chart { width: 156px; height: 156px; display: grid; place-items: center; margin-top: 20px; border-radius: 50%; background: conic-gradient(var(--blue) var(--five-s-score), #e8edf2 0); }

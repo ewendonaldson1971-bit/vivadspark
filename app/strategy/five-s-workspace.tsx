@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { FIVE_S_HEADINGS, FIVE_S_SCORES, FiveSAuditRow, calculateFiveSScore, printerAuditActions } from "../../lib/five-s-audit";
 
 type FiveSResponse = {
@@ -83,8 +84,8 @@ export function FiveSWorkspace({ department }: { department: string }) {
       <article className="card five-s-summary-card sort-card">
         <span className="section-kicker red">1 · Sort</span>
         <h3>Sort</h3>
-        <div className="qr-placeholder" aria-label="Sort QR code placeholder">
-          <span>QR</span><small>Your Sort QR code will appear here</small>
+        <div className="sort-qr-artwork">
+          <Image src="/printer-5s-sort-qr.png" alt="Vivad 5S submission form QR code" width={427} height={433} priority />
         </div>
       </article>
 

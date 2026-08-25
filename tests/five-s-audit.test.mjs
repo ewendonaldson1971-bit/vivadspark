@@ -52,5 +52,7 @@ test("Printers 5S page uses the linked Printer Audit and persists A–E override
   assert.match(workspace, /E · Evidence \/ comments/);
   assert.match(workspace, /Action required/);
   assert.match(workspace, /Overall score/);
+  assert.match(workspace, /\/printer-5s-sort-qr\.png/);
+  assert.match(workspace, /Vivad 5S submission form QR code/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS five_s_audit_overrides/);
 });
