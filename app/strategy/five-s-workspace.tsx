@@ -84,8 +84,15 @@ export function FiveSWorkspace({ department }: { department: string }) {
       <article className="card five-s-summary-card sort-card">
         <span className="section-kicker red">1 · Sort</span>
         <h3>Sort</h3>
-        <div className="sort-qr-artwork">
-          <Image src="/printer-5s-sort-qr.png" alt="Vivad 5S submission form QR code" width={427} height={433} priority />
+        <div className="sort-qr-artwork" style={{ height: "auto", overflow: "visible" }}>
+          <Image
+            src="/printer-5s-sort-qr.png"
+            alt="Vivad 5S submission form QR code"
+            width={427}
+            height={433}
+            priority
+            style={{ display: "block", width: "100%", maxWidth: 360, height: "auto", objectFit: "contain" }}
+          />
         </div>
       </article>
 
