@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { MobileWorkspaceNavigation, navigationItem, WorkspaceNavigationId } from "../components/workspace-navigation";
+import { FiveSWorkspace } from "./five-s-workspace";
 
 type View = "Overview" | "Safety" | "Quality" | "Delivery" | "5S" | "Scorecards" | "People" | "Settings";
 
@@ -406,13 +407,7 @@ export default function Home() {
               </div>
               <p>A dedicated 5S workspace for the selected department.</p>
             </div>
-            <article className="card five-s-placeholder">
-              <span className="five-s-placeholder-icon" aria-hidden="true">5S</span>
-              <div>
-                <h3>{department === "All departments" ? "Select a department to begin" : `${department} 5S workspace`}</h3>
-                <p>Special 5S instructions, tools and workflows will be added here.</p>
-              </div>
-            </article>
+            <FiveSWorkspace department={department} />
           </section>
         )}
 

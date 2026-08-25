@@ -4,6 +4,7 @@ import test from "node:test";
 
 const strategy = readFileSync(new URL("../app/strategy/page.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../app/components/workspace-navigation.tsx", import.meta.url), "utf8");
+const fiveSWorkspace = readFileSync(new URL("../app/strategy/five-s-workspace.tsx", import.meta.url), "utf8");
 
 test("strategy deployment offers every established department and persists the selection", () => {
   for (const department of ["CST", "Prepress", "Printers", "Cutters", "Fab1", "Framing", "Sew", "Light Box", "Office", "Despatch"]) {
@@ -32,7 +33,8 @@ test("strategy navigation exposes Overview, Safety, Quality, Delivery and 5S", (
   assert.match(strategy, /view === "Delivery"/);
   assert.match(strategy, /view === "5S"/);
   assert.match(strategy, /\{plan\.team\} 5S/);
-  assert.match(strategy, /Special 5S instructions, tools and workflows will be added here\./);
+  assert.match(strategy, /<FiveSWorkspace department=\{department\}/);
+  assert.match(fiveSWorkspace, /department !== "Printers"/);
 });
 
 test("legacy strategy links continue to open the renamed views", () => {

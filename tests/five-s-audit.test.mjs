@@ -1,0 +1,56 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { calculateFiveSScore, parsePrinterAuditCsv, printerAuditActions } from "../lib/five-s-audit.ts";
+
+const csv = `VIVAD 5S AUDIT – PRINTER AREAS,#,Audit Question,Score,Evidence / Comments,Action Required,Owner,Due Date,Status
+1. Sort,1,"Remove obsolete inks, media offcuts and empty cores",3,Clear,Keep red-tag station available,Alex,2026-09-01,Open
+1. Sort,2,"Keep only required tools at the machine",2,Two extra tools,,,,
+2. Set in Order,5,"Label inks and approved tools",N/A,Awaiting machine move,,,,
+Overall,20,0,0,0,0%,Not scored,,`;
+
+test("Printer Audit maps live columns A through I", () => {
+  const rows = parsePrinterAuditCsv(csv);
+  assert.equal(rows.length, 3);
+  assert.deepEqual(rows[0], {
+    sourceRow: 2,
+    heading: "1. Sort",
+    itemNumber: "1",
+    auditQuestion: "Remove obsolete inks, media offcuts and empty cores",
+    score: "3",
+    evidenceComments: "Clear",
+    actionRequired: "Keep red-tag station available",
+    owner: "Alex",
+    dueDate: "2026-09-01",
+    status: "Open",
+  });
+});
+
+test("overall 5S score excludes N/A and unscored questions", () => {
+  const rows = parsePrinterAuditCsv(csv);
+  assert.equal(calculateFiveSScore(rows), 83);
+});
+
+test("action panel is sourced from columns F, G and H", () => {
+  const actions = printerAuditActions(parsePrinterAuditCsv(csv));
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].actionRequired, "Keep red-tag station available");
+  assert.equal(actions[0].owner, "Alex");
+  assert.equal(actions[0].dueDate, "2026-09-01");
+});
+
+test("Printers 5S page uses the linked Printer Audit and persists A–E overrides", () => {
+  const route = readFileSync(new URL("../app/api/five-s/route.ts", import.meta.url), "utf8");
+  const workspace = readFileSync(new URL("../app/strategy/five-s-workspace.tsx", import.meta.url), "utf8");
+  const migration = readFileSync(new URL("../netlify/database/migrations/20260825090000_create_five_s_audit_overrides/migration.sql", import.meta.url), "utf8");
+  assert.match(route, /1yr3iZTR3lRZOlL2gOKsPgCniD0TJMnNC/);
+  assert.match(route, /1116237291/);
+  assert.match(workspace, /A · 5S heading/);
+  assert.match(workspace, /B · #/);
+  assert.match(workspace, /C · Audit question/);
+  assert.match(workspace, /D · Score/);
+  assert.match(workspace, /E · Evidence \/ comments/);
+  assert.match(workspace, /Action required/);
+  assert.match(workspace, /Overall score/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS five_s_audit_overrides/);
+});
