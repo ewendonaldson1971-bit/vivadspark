@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { buildProblemSolvingPdf, problemSolvingPdfFilename } from "../app/lets-problem-solve/problem-solving-pdf.ts";
 import { buildInternalAnalysis, ISHIKAWA_CATEGORIES, normaliseIshikawaCauses, sanitiseTechnicalContext, validateProblemAnalysis } from "../lib/problem-solving-model.ts";
 
 const event = {
@@ -57,6 +58,7 @@ test("problem-solving routes provide safe guest mode and authenticated persisten
 test("workflow uses the live read-only event feed, device guest progress and editable plans", async () => {
   const client = await readFile(new URL("../app/lets-problem-solve/problem-solving-workflow.tsx", import.meta.url), "utf8");
   const fishbone = await readFile(new URL("../app/lets-problem-solve/ishikawa-diagram.tsx", import.meta.url), "utf8");
+  const pdfActions = await readFile(new URL("../app/lets-problem-solve/problem-solving-pdf-actions.tsx", import.meta.url), "utf8");
   assert.match(client, /\/api\/non-conformance/);
   assert.match(client, /Run a new analysis version/);
   assert.match(client, /vivad-problem-plan:/);
@@ -67,4 +69,27 @@ test("workflow uses the live read-only event feed, device guest progress and edi
   assert.match(fishbone, /Add brainstorm item/);
   assert.match(fishbone, /Interactive Ishikawa fishbone diagram/);
   assert.match(fishbone, /Method.*Machine.*People.*Materials.*Measurement.*Environmental/s);
+  assert.match(client, /Print or share the completed problem-solving record/);
+  assert.match(pdfActions, /Open PDF/);
+  assert.match(pdfActions, />Print</);
+  assert.match(pdfActions, />Share</);
+  assert.match(pdfActions, />Download</);
+});
+
+test("completed problem-solving data generates a branded multi-section PDF", async () => {
+  const analysis = buildInternalAnalysis(event, "Check nozzle tests", "Research unavailable");
+  const logo = await readFile(new URL("../public/vivad-logo.png", import.meta.url));
+  const data = {
+    event,
+    problemStatement: "Print banding occurred on a large-format job.",
+    analysisNotes: "Observed during first-off inspection.",
+    analysis,
+    selectedSolutionIds: ["contain", "verify"],
+    nextSteps: analysis.nextSteps,
+    history: [{ version: 1, createdBy: "Test User", createdAt: "2026-08-25T01:00:00.000Z", provider: "internal-rules", planUpdatedAt: "2026-08-25T01:05:00.000Z" }],
+  };
+  assert.match(problemSolvingPdfFilename(data), /^Problem-Solving_NCE-42_\d{4}-\d{2}-\d{2}\.pdf$/);
+  const result = await buildProblemSolvingPdf(data, `data:image/png;base64,${logo.toString("base64")}`);
+  assert.ok(result.blob.size > 10_000);
+  assert.ok(result.pageCount >= 2);
 });
