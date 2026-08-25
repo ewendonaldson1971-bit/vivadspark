@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { MobileWorkspaceNavigation, navigationItem, WorkspaceNavigationId } from "../components/workspace-navigation";
 
-type View = "Overview" | "Safety" | "Quality" | "Delivery" | "Scorecards" | "People" | "Settings";
+type View = "Overview" | "Safety" | "Quality" | "Delivery" | "5S" | "Scorecards" | "People" | "Settings";
 
 type Initiative = {
   title: string;
@@ -67,7 +67,7 @@ export default function Home() {
     const requested = params.get("view");
     const legacyViews: Record<string, View> = { "X-matrix": "Safety", Initiatives: "Quality", Reviews: "Delivery" };
     const requestedView = requested ? legacyViews[requested] ?? requested : null;
-    if (requestedView && ["Safety", "Quality", "Delivery", "Scorecards", "People", "Settings"].includes(requestedView)) {
+    if (requestedView && ["Safety", "Quality", "Delivery", "5S", "Scorecards", "People", "Settings"].includes(requestedView)) {
       // Restore the directly linked workspace section after client hydration.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setView(requestedView as View);
@@ -193,7 +193,7 @@ export default function Home() {
 
         <div className="workspace-bar">
           <div className="tabs" role="tablist" aria-label="Strategy views">
-            {(["Overview", "Safety", "Quality", "Delivery"] as View[]).map((tab) => (
+            {(["Overview", "Safety", "Quality", "Delivery", "5S"] as View[]).map((tab) => (
               <button
                 className={view === tab ? "tab active" : "tab"}
                 type="button"
@@ -393,6 +393,25 @@ export default function Home() {
                   <button type="button" aria-label={`Open ${title}`}>→</button>
                 </div>
               ))}
+            </article>
+          </section>
+        )}
+
+        {view === "5S" && (
+          <section className="single-view" aria-labelledby="five-s-title">
+            <div className="page-intro">
+              <div>
+                <span className="section-kicker red">Workplace organisation</span>
+                <h2 id="five-s-title">{plan.team} 5S</h2>
+              </div>
+              <p>A dedicated 5S workspace for the selected department.</p>
+            </div>
+            <article className="card five-s-placeholder">
+              <span className="five-s-placeholder-icon" aria-hidden="true">5S</span>
+              <div>
+                <h3>{department === "All departments" ? "Select a department to begin" : `${department} 5S workspace`}</h3>
+                <p>Special 5S instructions, tools and workflows will be added here.</p>
+              </div>
             </article>
           </section>
         )}

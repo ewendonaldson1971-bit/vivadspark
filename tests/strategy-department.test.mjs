@@ -23,13 +23,16 @@ test("selected department drives its own strategy deployment content", () => {
   assert.match(strategy, /plan\.safetyRows\.map/);
 });
 
-test("strategy navigation exposes Overview, Safety, Quality and Delivery", () => {
-  assert.match(strategy, /\["Overview", "Safety", "Quality", "Delivery"\]/);
+test("strategy navigation exposes Overview, Safety, Quality, Delivery and 5S", () => {
+  assert.match(strategy, /\["Overview", "Safety", "Quality", "Delivery", "5S"\]/);
   assert.match(navigation, /label: "Quality"[^\n]+href: "\/strategy\?view=Quality"/);
   assert.match(navigation, /label: "Delivery"[^\n]+href: "\/strategy\?view=Delivery"/);
   assert.match(strategy, /view === "Safety"/);
   assert.match(strategy, /view === "Quality"/);
   assert.match(strategy, /view === "Delivery"/);
+  assert.match(strategy, /view === "5S"/);
+  assert.match(strategy, /\{plan\.team\} 5S/);
+  assert.match(strategy, /Special 5S instructions, tools and workflows will be added here\./);
 });
 
 test("legacy strategy links continue to open the renamed views", () => {
