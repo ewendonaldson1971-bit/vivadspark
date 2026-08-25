@@ -42,6 +42,7 @@ test("action panel is sourced from columns F, G and H", () => {
 test("Printers 5S page uses the linked Printer Audit and persists A–E overrides", () => {
   const route = readFileSync(new URL("../app/api/five-s/route.ts", import.meta.url), "utf8");
   const workspace = readFileSync(new URL("../app/strategy/five-s-workspace.tsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../netlify/database/migrations/20260825090000_create_five_s_audit_overrides/migration.sql", import.meta.url), "utf8");
   assert.match(route, /1yr3iZTR3lRZOlL2gOKsPgCniD0TJMnNC/);
   assert.match(route, /1116237291/);
@@ -54,5 +55,6 @@ test("Printers 5S page uses the linked Printer Audit and persists A–E override
   assert.match(workspace, /Overall score/);
   assert.match(workspace, /\/printer-5s-sort-qr\.png/);
   assert.match(workspace, /Vivad 5S submission form QR code/);
+  assert.match(styles, /\.sort-qr-artwork img \{[^}]*height: auto;[^}]*object-fit: contain;/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS five_s_audit_overrides/);
 });
