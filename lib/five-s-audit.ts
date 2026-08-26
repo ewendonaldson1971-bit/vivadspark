@@ -87,11 +87,18 @@ export function parseCsv(input: string) {
 }
 
 export function parseFiveSAuditCsv(csv: string): FiveSAuditRow[] {
+  const seenItems = new Set<string>();
   return parseCsv(csv)
     .map((row, index) => ({ row, sourceRow: index + 1 }))
     .filter(({ row }) => /^\d{1,2}$/.test(clean(row[1])))
     .filter(({ row }) => Number(row[1]) >= 1 && Number(row[1]) <= 20)
     .filter(({ row }) => FIVE_S_HEADINGS.includes(clean(row[0]) as (typeof FIVE_S_HEADINGS)[number]))
+    .filter(({ row }) => {
+      const itemNumber = clean(row[1]);
+      if (seenItems.has(itemNumber)) return false;
+      seenItems.add(itemNumber);
+      return true;
+    })
     .map(({ row, sourceRow }) => ({
       sourceRow,
       heading: clean(row[0]),
@@ -101,7 +108,7 @@ export function parseFiveSAuditCsv(csv: string): FiveSAuditRow[] {
       evidenceComments: clean(row[4]),
       actionRequired: clean(row[5]),
       owner: clean(row[6]),
-      dueDate: clean(row[7]),
+      dueDate: normaliseDueDate(row[7]),
       status: clean(row[8]),
     }));
 }
@@ -124,6 +131,13 @@ export const printerAuditActions = fiveSAuditActions;
 function normaliseScore(value = "") {
   const score = clean(value).toUpperCase();
   return FIVE_S_SCORES.includes(score as (typeof FIVE_S_SCORES)[number]) ? score : "";
+}
+
+function normaliseDueDate(value = "") {
+  const date = clean(value);
+  const match = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return date;
+  return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
 }
 
 function clean(value = "") {

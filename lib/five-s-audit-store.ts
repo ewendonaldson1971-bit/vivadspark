@@ -19,7 +19,8 @@ function database() {
 
 export async function applyFiveSOverrides(department: string, rows: FiveSAuditRow[]) {
   const result = await database().pool.query(
-    `SELECT source_row, heading, item_number, audit_question, score, evidence_comments
+    `SELECT source_row, heading, item_number, audit_question, score, evidence_comments,
+            action_required, owner, due_date, status
      FROM five_s_audit_overrides WHERE department = $1`,
     [department],
   );
@@ -36,6 +37,10 @@ export async function applyFiveSOverrides(department: string, rows: FiveSAuditRo
       auditQuestion: String(override.audit_question),
       score: String(override.score),
       evidenceComments: String(override.evidence_comments),
+      actionRequired: String(override.action_required ?? ""),
+      owner: String(override.owner ?? ""),
+      dueDate: String(override.due_date ?? ""),
+      status: String(override.status ?? ""),
     };
   });
 }
@@ -44,16 +49,22 @@ export async function saveFiveSOverride(department: string, row: FiveSAuditRow) 
   const updatedAt = new Date().toISOString();
   await database().pool.query(
     `INSERT INTO five_s_audit_overrides
-       (department, source_row, heading, item_number, audit_question, score, evidence_comments, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (department, source_row, heading, item_number, audit_question, score, evidence_comments,
+        action_required, owner, due_date, status, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT (department, source_row) DO UPDATE SET
        heading = EXCLUDED.heading,
        item_number = EXCLUDED.item_number,
        audit_question = EXCLUDED.audit_question,
        score = EXCLUDED.score,
        evidence_comments = EXCLUDED.evidence_comments,
+       action_required = EXCLUDED.action_required,
+       owner = EXCLUDED.owner,
+       due_date = EXCLUDED.due_date,
+       status = EXCLUDED.status,
        updated_at = EXCLUDED.updated_at`,
-    [department, row.sourceRow, row.heading, row.itemNumber, row.auditQuestion, row.score, row.evidenceComments, updatedAt],
+    [department, row.sourceRow, row.heading, row.itemNumber, row.auditQuestion, row.score, row.evidenceComments,
+      row.actionRequired, row.owner, row.dueDate, row.status, updatedAt],
   );
   return { ...row, updatedAt };
 }

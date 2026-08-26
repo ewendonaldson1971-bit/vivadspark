@@ -4,9 +4,10 @@ import test from "node:test";
 import { FIVE_S_AUDIT_DEPARTMENTS, calculateFiveSScore, fiveSAuditActions, getFiveSAuditConfig, parseFiveSAuditCsv } from "../lib/five-s-audit.ts";
 
 const csv = `VIVAD 5S AUDIT – PRINTER AREAS,#,Audit Question,Score,Evidence / Comments,Action Required,Owner,Due Date,Status
-1. Sort,1,"Remove obsolete inks, media offcuts and empty cores",3,Clear,Keep red-tag station available,Alex,2026-09-01,Open
+1. Sort,1,"Remove obsolete inks, media offcuts and empty cores",3,Clear,Keep red-tag station available,Alex,01/09/2026,Open
 1. Sort,2,"Keep only required tools at the machine",2,Two extra tools,,,,
 2. Set in Order,5,"Label inks and approved tools",N/A,Awaiting machine move,,,,
+1. Sort,1,0,0,0,0%,Not scored,,
 Overall,20,0,0,0,0%,Not scored,,`;
 
 test("Printer Audit maps live columns A through I", () => {
@@ -53,12 +54,14 @@ test("every department is mapped to a live 5S audit template", () => {
   assert.equal(getFiveSAuditConfig("All departments"), null);
 });
 
-test("department 5S pages use the linked audit workbook and persist separate A–E overrides", () => {
+test("department 5S pages use the linked audit workbook and persist editable actions", () => {
   const route = readFileSync(new URL("../app/api/five-s/route.ts", import.meta.url), "utf8");
   const workspace = readFileSync(new URL("../app/strategy/five-s-workspace.tsx", import.meta.url), "utf8");
   const scorePrint = readFileSync(new URL("../app/strategy/five-s-score-print.ts", import.meta.url), "utf8");
+  const store = readFileSync(new URL("../lib/five-s-audit-store.ts", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../netlify/database/migrations/20260825090000_create_five_s_audit_overrides/migration.sql", import.meta.url), "utf8");
+  const actionMigration = readFileSync(new URL("../netlify/database/migrations/20260826120000_add_five_s_action_fields/migration.sql", import.meta.url), "utf8");
   assert.match(route, /1yr3iZTR3lRZOlL2gOKsPgCniD0TJMnNC/);
   assert.match(route, /getFiveSAuditConfig\(department\)/);
   assert.match(route, /saveFiveSOverride\(department, row\)/);
@@ -68,6 +71,15 @@ test("department 5S pages use the linked audit workbook and persist separate A�
   assert.match(workspace, /D · Score/);
   assert.match(workspace, /E · Evidence \/ comments/);
   assert.match(workspace, /Action required/);
+  assert.match(workspace, /Add action/);
+  assert.match(workspace, /Assign an owner/);
+  assert.match(workspace, /type="date"/);
+  assert.match(workspace, /removeAction/);
+  assert.match(store, /action_required, owner, due_date, status/);
+  assert.match(store, /action_required = EXCLUDED\.action_required/);
+  assert.match(actionMigration, /ADD COLUMN IF NOT EXISTS action_required/);
+  assert.match(actionMigration, /ADD COLUMN IF NOT EXISTS owner/);
+  assert.match(actionMigration, /ADD COLUMN IF NOT EXISTS due_date/);
   assert.match(workspace, /Overall score/);
   assert.match(workspace, /Print overall score/);
   assert.match(workspace, /printFiveSScorePoster/);

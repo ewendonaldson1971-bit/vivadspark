@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { FIVE_S_HEADINGS, FIVE_S_SCORES, FiveSAuditRow, calculateFiveSScore, fiveSAuditActions, getFiveSAuditConfig } from "../../lib/five-s-audit";
 import { printFiveSScorePoster } from "./five-s-score-print";
@@ -22,6 +22,8 @@ export function FiveSWorkspace({ department }: { department: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<Record<number, string>>({});
+  const [actionDraft, setActionDraft] = useState({ actionRequired: "", owner: "", dueDate: "" });
+  const [actionMessage, setActionMessage] = useState("");
   const overallScore = useMemo(() => calculateFiveSScore(rows), [rows]);
   const actions = useMemo(() => fiveSAuditActions(rows), [rows]);
   const scoredCount = rows.filter((row) => /^[0-3]$/.test(row.score)).length;
@@ -39,6 +41,8 @@ export function FiveSWorkspace({ department }: { department: string }) {
     setSourceUrl("");
     setSourceName(config.sheetName);
     setSaveStatus({});
+    setActionDraft({ actionRequired: "", owner: "", dueDate: "" });
+    setActionMessage("");
     setLoading(true);
     setError("");
     fetch(`/api/five-s?department=${encodeURIComponent(department)}`, { cache: "no-store", signal: controller.signal })
@@ -72,7 +76,11 @@ export function FiveSWorkspace({ department }: { department: string }) {
   async function saveRow(sourceRow: number) {
     const row = rows.find((item) => item.sourceRow === sourceRow);
     if (!row) return;
-    setSaveStatus((current) => ({ ...current, [sourceRow]: "Saving…" }));
+    await persistRow(row);
+  }
+
+  async function persistRow(row: FiveSAuditRow) {
+    setSaveStatus((current) => ({ ...current, [row.sourceRow]: "Saving…" }));
     try {
       const response = await fetch("/api/five-s", {
         method: "PUT",
@@ -81,10 +89,34 @@ export function FiveSWorkspace({ department }: { department: string }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "The row could not be saved.");
-      setSaveStatus((current) => ({ ...current, [sourceRow]: "Saved" }));
+      setSaveStatus((current) => ({ ...current, [row.sourceRow]: "Saved" }));
+      return true;
     } catch (reason) {
-      setSaveStatus((current) => ({ ...current, [sourceRow]: reason instanceof Error ? reason.message : "Save failed" }));
+      setSaveStatus((current) => ({ ...current, [row.sourceRow]: reason instanceof Error ? reason.message : "Save failed" }));
+      return false;
     }
+  }
+
+  async function addAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActionMessage("");
+    const availableRow = rows.find((row) => !row.actionRequired && !row.owner && !row.dueDate);
+    if (!availableRow) {
+      setActionMessage("Every audit item already has an action. Remove or complete an existing action before adding another.");
+      return;
+    }
+    const nextRow = { ...availableRow, ...actionDraft, status: "Open" };
+    setRows((current) => current.map((row) => row.sourceRow === nextRow.sourceRow ? nextRow : row));
+    if (await persistRow(nextRow)) {
+      setActionDraft({ actionRequired: "", owner: "", dueDate: "" });
+      setActionMessage("Action added and saved.");
+    }
+  }
+
+  async function removeAction(row: FiveSAuditRow) {
+    const nextRow = { ...row, actionRequired: "", owner: "", dueDate: "", status: "" };
+    setRows((current) => current.map((item) => item.sourceRow === nextRow.sourceRow ? nextRow : item));
+    if (await persistRow(nextRow)) setActionMessage("Action removed.");
   }
 
   return <div className="five-s-audit-workspace">
@@ -126,9 +158,21 @@ export function FiveSWorkspace({ department }: { department: string }) {
       <article className="card five-s-summary-card actions-card">
         <span className="section-kicker">Open follow-up</span>
         <h3>Actions</h3>
+        <form className="five-s-action-form" onSubmit={addAction}>
+          <label><span>Action required</span><input required value={actionDraft.actionRequired} onChange={(event) => setActionDraft((current) => ({ ...current, actionRequired: event.target.value }))} placeholder="Describe the action to complete" /></label>
+          <label><span>Owner</span><input required value={actionDraft.owner} onChange={(event) => setActionDraft((current) => ({ ...current, owner: event.target.value }))} placeholder="Assign an owner" /></label>
+          <label><span>Due date</span><input required type="date" value={actionDraft.dueDate} onChange={(event) => setActionDraft((current) => ({ ...current, dueDate: event.target.value }))} /></label>
+          <button className="button button-primary" type="submit">Add action</button>
+        </form>
+        {actionMessage && <p className="five-s-action-message" role="status">{actionMessage}</p>}
         <div className="five-s-actions-table" role="table" aria-label={`${department} 5S audit actions`}>
-          <div className="five-s-actions-row head" role="row"><span>Action required</span><span>Owner</span><span>Due date</span></div>
-          {actions.length ? actions.map((row) => <div className="five-s-actions-row" role="row" key={row.sourceRow}><span>{row.actionRequired || "—"}</span><span>{row.owner || "Unassigned"}</span><span>{row.dueDate || "Not set"}</span></div>) : <p className="five-s-empty">No actions are recorded in columns F–H yet.</p>}
+          <div className="five-s-actions-row head" role="row"><span>Action required</span><span>Owner</span><span>Due date</span><span>Controls</span></div>
+          {actions.length ? actions.map((row) => <div className="five-s-actions-row" role="row" key={row.sourceRow}>
+            <input aria-label={`Action required for item ${row.itemNumber}`} value={row.actionRequired} onChange={(event) => updateRow(row.sourceRow, "actionRequired", event.target.value)} />
+            <input aria-label={`Action owner for item ${row.itemNumber}`} value={row.owner} onChange={(event) => updateRow(row.sourceRow, "owner", event.target.value)} />
+            <input aria-label={`Action due date for item ${row.itemNumber}`} type="date" value={row.dueDate} onChange={(event) => updateRow(row.sourceRow, "dueDate", event.target.value)} />
+            <div className="five-s-action-controls"><button type="button" onClick={() => saveRow(row.sourceRow)}>Save</button><button className="danger" type="button" aria-label={`Remove action for item ${row.itemNumber}`} onClick={() => removeAction(row)}>Remove</button><small className={saveStatus[row.sourceRow] === "Saved" ? "save-status saved" : "save-status"}>{saveStatus[row.sourceRow] || ""}</small></div>
+          </div>) : <p className="five-s-empty">No open actions yet. Add the first follow-up above.</p>}
         </div>
       </article>
     </div>
