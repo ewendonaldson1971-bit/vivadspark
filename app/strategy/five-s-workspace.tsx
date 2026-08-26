@@ -149,9 +149,9 @@ export function FiveSWorkspace({ department }: { department: string }) {
           className="button button-secondary score-print-button"
           type="button"
           disabled={loading || !rows.length}
-          onClick={() => printFiveSScorePoster({ department, overallScore, scoredCount, totalQuestions: rows.length })}
+          onClick={() => printFiveSScorePoster({ department, overallScore, scoredCount, totalQuestions: rows.length, actions })}
         >
-          Print overall score
+          Print score &amp; actions
         </button>
       </article>
 

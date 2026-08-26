@@ -3,10 +3,11 @@ type FiveSScorePoster = {
   overallScore: number;
   scoredCount: number;
   totalQuestions: number;
+  actions?: Array<{ actionRequired: string; owner: string; dueDate: string }>;
   printedAt?: Date;
 };
 
-export function printFiveSScorePoster({ department, overallScore, scoredCount, totalQuestions, printedAt = new Date() }: FiveSScorePoster) {
+export function printFiveSScorePoster({ department, overallScore, scoredCount, totalQuestions, actions = [], printedAt = new Date() }: FiveSScorePoster) {
   const frame = document.createElement("iframe");
   frame.title = `${department} 5S overall score print preview`;
   frame.setAttribute("aria-hidden", "true");
@@ -25,6 +26,10 @@ export function printFiveSScorePoster({ department, overallScore, scoredCount, t
   const score = Math.max(0, Math.min(100, Math.round(overallScore)));
   const scoreDegrees = score * 3.6;
   const logoUrl = new URL("/vivad-logo.png", window.location.origin).href;
+  const actionRows = actions.length
+    ? actions.map((action) => `<tr><td>${escapeHtml(action.actionRequired)}</td><td>${escapeHtml(action.owner || "Unassigned")}</td><td>${escapeHtml(formatDueDate(action.dueDate))}</td></tr>`).join("")
+    : '<tr><td class="no-actions" colspan="3">No open actions recorded.</td></tr>';
+  const tableClass = actions.length > 12 ? "actions-table dense" : "actions-table";
   let printStarted = false;
 
   const cleanup = () => frame.remove();
@@ -44,27 +49,38 @@ export function printFiveSScorePoster({ department, overallScore, scoredCount, t
 @page { size: A4 landscape; margin: 0; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: #fff; color: #3f454c; font-family: Arial, Helvetica, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.poster { width: 297mm; min-height: 210mm; padding: 14mm 18mm; display: flex; flex-direction: column; }
-.logo { width: 54mm; height: auto; }
-.content { min-height: 146mm; display: grid; grid-template-columns: minmax(0, 1fr) 132mm; align-items: center; gap: 18mm; }
-.details { padding-left: 8mm; text-align: left; }
-.eyebrow { margin: 0 0 5mm; color: #478fe1; font-size: 12pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-h1 { margin: 0; color: #3f454c; font-size: 42pt; line-height: 1.05; }
-.subtitle { margin: 5mm 0 0; color: #747b83; font-size: 18pt; }
-.chart-panel { display: grid; place-items: center; text-align: center; }
-.chart { width: 112mm; height: 112mm; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#478fe1 0deg ${scoreDegrees}deg, #e8edf2 ${scoreDegrees}deg 360deg); }
-.chart::before { content: ""; width: 82mm; height: 82mm; grid-area: 1 / 1; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1px #e5e9ed; }
+.poster { width: 297mm; min-height: 210mm; padding: 12mm 15mm; display: flex; flex-direction: column; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12mm; padding-bottom: 5mm; border-bottom: 1px solid #dfe3e7; }
+.logo { width: 50mm; height: auto; }
+.title { text-align: right; }
+.eyebrow { margin: 0 0 2mm; color: #478fe1; font-size: 9pt; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
+h1 { margin: 0; color: #3f454c; font-size: 25pt; line-height: 1.05; }
+.title p { margin: 2mm 0 0; color: #747b83; font-size: 10pt; }
+.content { flex: 1; display: grid; grid-template-columns: 94mm minmax(0, 1fr); align-items: stretch; gap: 10mm; padding: 7mm 0; }
+.score-panel, .actions-panel { border: 1px solid #dfe3e7; border-radius: 4mm; background: #fff; }
+.score-panel { display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 7mm; text-align: center; }
+.panel-label { margin: 0 0 5mm; color: #478fe1; font-size: 9pt; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.chart { width: 82mm; height: 82mm; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#478fe1 0deg ${scoreDegrees}deg, #e8edf2 ${scoreDegrees}deg 360deg); }
+.chart::before { content: ""; width: 60mm; height: 60mm; grid-area: 1 / 1; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1px #e5e9ed; }
 .score { z-index: 1; grid-area: 1 / 1; }
-.score strong { display: block; color: #3f454c; font-size: 48pt; line-height: 1; }
-.score span { display: block; margin-top: 3mm; color: #747b83; font-size: 12pt; letter-spacing: 1px; text-transform: uppercase; }
-.questions { margin: 5mm 0 0; color: #5d646c; font-size: 14pt; }
-.date { width: 100%; margin: 0; padding-top: 6mm; border-top: 1px solid #dfe3e7; color: #555c64; font-size: 13pt; text-align: right; }
-.date strong { color: #3f454c; }
+.score strong { display: block; color: #3f454c; font-size: 38pt; line-height: 1; }
+.score span { display: block; margin-top: 2mm; color: #747b83; font-size: 9pt; letter-spacing: 1px; text-transform: uppercase; }
+.questions { margin: 4mm 0 0; color: #5d646c; font-size: 10pt; }
+.actions-panel { padding: 6mm; }
+.actions-panel h2 { margin: 0 0 4mm; color: #3f454c; font-size: 17pt; }
+.actions-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.actions-table th { padding: 2.5mm 2mm; border-bottom: 1px solid #dfe3e7; background: #f7f9fb; color: #747b83; font-size: 7.5pt; letter-spacing: .5px; text-align: left; text-transform: uppercase; }
+.actions-table td { padding: 2.5mm 2mm; border-bottom: 1px solid #e8ebee; color: #4b5259; font-size: 8.5pt; line-height: 1.2; overflow-wrap: anywhere; vertical-align: top; }
+.actions-table th:nth-child(1) { width: 62%; }.actions-table th:nth-child(2) { width: 20%; }.actions-table th:nth-child(3) { width: 18%; }
+.actions-table.dense th { padding: 1.7mm; font-size: 7pt; }.actions-table.dense td { padding: 1.5mm 1.7mm; font-size: 7.2pt; line-height: 1.1; }
+.no-actions { padding: 12mm 3mm !important; color: #747b83 !important; text-align: center; }
+.footer { width: 100%; margin: 0; padding-top: 4mm; border-top: 1px solid #dfe3e7; color: #555c64; font-size: 10pt; text-align: right; }
+.footer strong { color: #3f454c; }
 </style></head><body><main class="poster">
-<img class="logo" src="${logoUrl}" alt="Vivad SPARK">
-<div class="content"><section class="details"><p class="eyebrow">Workplace organisation</p><h1>${safeDepartment} 5S</h1><p class="subtitle">Overall audit score</p></section>
-<section class="chart-panel"><div class="chart" role="img" aria-label="Overall score ${score} percent"><div class="score"><strong>${score}%</strong><span>Overall score</span></div></div><p class="questions">${scoredCount} of ${totalQuestions} questions scored</p></section></div>
-<p class="date"><strong>Area:</strong> ${safeDepartment}<br><strong>Printed:</strong> ${safeDate}</p>
+<header class="header"><img class="logo" src="${logoUrl}" alt="Vivad SPARK"><div class="title"><p class="eyebrow">Workplace organisation</p><h1>${safeDepartment} 5S report</h1><p>${safeDate}</p></div></header>
+<div class="content"><section class="score-panel"><p class="panel-label">Overall score</p><div class="chart" role="img" aria-label="Overall score ${score} percent"><div class="score"><strong>${score}%</strong><span>Overall score</span></div></div><p class="questions">${scoredCount} of ${totalQuestions} questions scored</p></section>
+<section class="actions-panel"><p class="panel-label">Open follow-up</p><h2>Actions</h2><table class="${tableClass}"><thead><tr><th>Action required</th><th>Owner</th><th>Due date</th></tr></thead><tbody>${actionRows}</tbody></table></section></div>
+<p class="footer"><strong>Department:</strong> ${safeDepartment} &nbsp;&nbsp; <strong>Printed:</strong> ${safeDate}</p>
 </main></body></html>`);
   printDocument.close();
 
@@ -96,6 +112,11 @@ function ordinal(day: number) {
   if (day % 10 === 2) return "nd";
   if (day % 10 === 3) return "rd";
   return "th";
+}
+
+function formatDueDate(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value || "Not set";
 }
 
 function escapeHtml(value: string) {

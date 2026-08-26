@@ -81,12 +81,15 @@ test("department 5S pages use the linked audit workbook and persist editable act
   assert.match(actionMigration, /ADD COLUMN IF NOT EXISTS owner/);
   assert.match(actionMigration, /ADD COLUMN IF NOT EXISTS due_date/);
   assert.match(workspace, /Overall score/);
-  assert.match(workspace, /Print overall score/);
+  assert.match(workspace, /Print score &amp; actions/);
   assert.match(workspace, /printFiveSScorePoster/);
+  assert.match(workspace, /totalQuestions: rows\.length, actions/);
   assert.match(scorePrint, /@page \{ size: A4 landscape/);
   assert.match(scorePrint, /width: 297mm; min-height: 210mm/);
-  assert.match(scorePrint, /Area:<\/strong> \$\{safeDepartment\}/);
+  assert.match(scorePrint, /Department:<\/strong> \$\{safeDepartment\}/);
   assert.match(scorePrint, /Printed:<\/strong> \$\{safeDate\}/);
+  assert.match(scorePrint, /Action required<\/th><th>Owner<\/th><th>Due date/);
+  assert.match(scorePrint, /No open actions recorded/);
   assert.match(scorePrint, /\/vivad-logo\.png/);
   assert.match(scorePrint, /printWindow\.print\(\)/);
   assert.match(workspace, /\/printer-5s-sort-qr\.png/);
