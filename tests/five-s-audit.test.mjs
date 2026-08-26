@@ -71,7 +71,8 @@ test("department 5S pages use the linked audit workbook and persist separate Aâ€
   assert.match(workspace, /Overall score/);
   assert.match(workspace, /Print overall score/);
   assert.match(workspace, /printFiveSScorePoster/);
-  assert.match(scorePrint, /@page \{ size: A4 portrait/);
+  assert.match(scorePrint, /@page \{ size: A4 landscape/);
+  assert.match(scorePrint, /width: 297mm; min-height: 210mm/);
   assert.match(scorePrint, /Area:<\/strong> \$\{safeDepartment\}/);
   assert.match(scorePrint, /Printed:<\/strong> \$\{safeDate\}/);
   assert.match(scorePrint, /\/vivad-logo\.png/);

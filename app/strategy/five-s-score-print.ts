@@ -41,29 +41,29 @@ export function printFiveSScorePoster({ department, overallScore, scoredCount, t
   printDocument.open();
   printDocument.write(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>${safeDepartment} 5S overall score</title><style>
-@page { size: A4 portrait; margin: 0; }
+@page { size: A4 landscape; margin: 0; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: #fff; color: #3f454c; font-family: Arial, Helvetica, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.poster { width: 210mm; min-height: 297mm; padding: 18mm; display: flex; align-items: center; flex-direction: column; text-align: center; }
-.logo { width: 62mm; height: auto; margin-bottom: 18mm; }
-.eyebrow { margin: 0 0 4mm; color: #478fe1; font-size: 12pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-h1 { margin: 0; color: #3f454c; font-size: 32pt; line-height: 1.1; }
-.subtitle { margin: 4mm 0 14mm; color: #747b83; font-size: 15pt; }
-.chart { width: 118mm; height: 118mm; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#478fe1 0deg ${scoreDegrees}deg, #e8edf2 ${scoreDegrees}deg 360deg); }
-.chart::before { content: ""; width: 86mm; height: 86mm; grid-area: 1 / 1; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1px #e5e9ed; }
+.poster { width: 297mm; min-height: 210mm; padding: 14mm 18mm; display: flex; flex-direction: column; }
+.logo { width: 54mm; height: auto; }
+.content { min-height: 146mm; display: grid; grid-template-columns: minmax(0, 1fr) 132mm; align-items: center; gap: 18mm; }
+.details { padding-left: 8mm; text-align: left; }
+.eyebrow { margin: 0 0 5mm; color: #478fe1; font-size: 12pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+h1 { margin: 0; color: #3f454c; font-size: 42pt; line-height: 1.05; }
+.subtitle { margin: 5mm 0 0; color: #747b83; font-size: 18pt; }
+.chart-panel { display: grid; place-items: center; text-align: center; }
+.chart { width: 112mm; height: 112mm; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#478fe1 0deg ${scoreDegrees}deg, #e8edf2 ${scoreDegrees}deg 360deg); }
+.chart::before { content: ""; width: 82mm; height: 82mm; grid-area: 1 / 1; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1px #e5e9ed; }
 .score { z-index: 1; grid-area: 1 / 1; }
 .score strong { display: block; color: #3f454c; font-size: 48pt; line-height: 1; }
 .score span { display: block; margin-top: 3mm; color: #747b83; font-size: 12pt; letter-spacing: 1px; text-transform: uppercase; }
-.questions { margin: 10mm 0 0; color: #5d646c; font-size: 14pt; }
-.date { width: 100%; margin-top: auto; padding-top: 8mm; border-top: 1px solid #dfe3e7; color: #555c64; font-size: 14pt; }
+.questions { margin: 5mm 0 0; color: #5d646c; font-size: 14pt; }
+.date { width: 100%; margin: 0; padding-top: 6mm; border-top: 1px solid #dfe3e7; color: #555c64; font-size: 13pt; text-align: right; }
 .date strong { color: #3f454c; }
 </style></head><body><main class="poster">
 <img class="logo" src="${logoUrl}" alt="Vivad SPARK">
-<p class="eyebrow">Workplace organisation</p>
-<h1>${safeDepartment} 5S</h1>
-<p class="subtitle">Overall audit score</p>
-<div class="chart" role="img" aria-label="Overall score ${score} percent"><div class="score"><strong>${score}%</strong><span>Overall score</span></div></div>
-<p class="questions">${scoredCount} of ${totalQuestions} questions scored</p>
+<div class="content"><section class="details"><p class="eyebrow">Workplace organisation</p><h1>${safeDepartment} 5S</h1><p class="subtitle">Overall audit score</p></section>
+<section class="chart-panel"><div class="chart" role="img" aria-label="Overall score ${score} percent"><div class="score"><strong>${score}%</strong><span>Overall score</span></div></div><p class="questions">${scoredCount} of ${totalQuestions} questions scored</p></section></div>
 <p class="date"><strong>Area:</strong> ${safeDepartment}<br><strong>Printed:</strong> ${safeDate}</p>
 </main></body></html>`);
   printDocument.close();
