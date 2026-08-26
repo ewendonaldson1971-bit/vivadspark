@@ -2,13 +2,14 @@
 
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { FIVE_S_HEADINGS, FIVE_S_SCORES, FiveSAuditRow, calculateFiveSScore, printerAuditActions } from "../../lib/five-s-audit";
+import { FIVE_S_HEADINGS, FIVE_S_SCORES, FiveSAuditRow, calculateFiveSScore, fiveSAuditActions, getFiveSAuditConfig } from "../../lib/five-s-audit";
 
 type FiveSResponse = {
   available: boolean;
   rows: FiveSAuditRow[];
   overallScore: number;
   storageAvailable?: boolean;
+  sourceName?: string;
   sourceUrl?: string;
   error?: string;
 };
@@ -16,27 +17,35 @@ type FiveSResponse = {
 export function FiveSWorkspace({ department }: { department: string }) {
   const [rows, setRows] = useState<FiveSAuditRow[]>([]);
   const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceName, setSourceName] = useState("5S Audit");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<Record<number, string>>({});
   const overallScore = useMemo(() => calculateFiveSScore(rows), [rows]);
-  const actions = useMemo(() => printerAuditActions(rows), [rows]);
+  const actions = useMemo(() => fiveSAuditActions(rows), [rows]);
 
   useEffect(() => {
-    if (department !== "Printers") {
+    const config = getFiveSAuditConfig(department);
+    if (!config) {
       setRows([]);
+      setSourceUrl("");
       setError("");
       return;
     }
     const controller = new AbortController();
+    setRows([]);
+    setSourceUrl("");
+    setSourceName(config.sheetName);
+    setSaveStatus({});
     setLoading(true);
     setError("");
     fetch(`/api/five-s?department=${encodeURIComponent(department)}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const data = await response.json() as FiveSResponse;
-        if (!response.ok) throw new Error(data.error || "The Printer Audit could not be loaded.");
+        if (!response.ok) throw new Error(data.error || `The ${department} 5S audit could not be loaded.`);
         setRows(data.rows || []);
         setSourceUrl(data.sourceUrl || "");
+        setSourceName(data.sourceName || "5S Audit");
         if (data.storageAvailable === false) setError("The live audit is visible, but working-copy storage is not available yet.");
       })
       .catch((reason) => { if (reason.name !== "AbortError") setError(reason.message); })
@@ -44,12 +53,12 @@ export function FiveSWorkspace({ department }: { department: string }) {
     return () => controller.abort();
   }, [department]);
 
-  if (department !== "Printers") {
+  if (!getFiveSAuditConfig(department)) {
     return <article className="card five-s-placeholder">
       <span className="five-s-placeholder-icon" aria-hidden="true">5S</span>
       <div>
-        <h3>{department === "All departments" ? "Select Printers to view the trial" : `${department} 5S workspace`}</h3>
-        <p>The live audit trial is currently available for Printers. Other departments will be connected next.</p>
+        <h3>Select a department to open its 5S audit</h3>
+        <p>Each department has its own score, actions and editable working copy.</p>
       </div>
     </article>;
   }
@@ -76,8 +85,8 @@ export function FiveSWorkspace({ department }: { department: string }) {
     }
   }
 
-  return <div className="five-s-printer-workspace">
-    {loading && <div className="five-s-message" role="status">Loading the live Printer Audit…</div>}
+  return <div className="five-s-audit-workspace">
+    {loading && <div className="five-s-message" role="status">Loading the live {department} 5S audit…</div>}
     {error && <div className="five-s-message error" role="alert">{error}</div>}
 
     <div className="five-s-summary-grid">
@@ -98,7 +107,7 @@ export function FiveSWorkspace({ department }: { department: string }) {
 
       <article className="card five-s-summary-card score-card">
         <span className="section-kicker">Overall score</span>
-        <div className="five-s-score-chart" role="img" aria-label={`Printer Audit overall score ${overallScore}%`} style={{ "--five-s-score": `${overallScore * 3.6}deg` } as CSSProperties}>
+        <div className="five-s-score-chart" role="img" aria-label={`${department} 5S audit overall score ${overallScore}%`} style={{ "--five-s-score": `${overallScore * 3.6}deg` } as CSSProperties}>
           <span><strong>{overallScore}%</strong><small>overall</small></span>
         </div>
         <p>{rows.filter((row) => /^[0-3]$/.test(row.score)).length} of {rows.length || 20} questions scored</p>
@@ -107,7 +116,7 @@ export function FiveSWorkspace({ department }: { department: string }) {
       <article className="card five-s-summary-card actions-card">
         <span className="section-kicker">Open follow-up</span>
         <h3>Actions</h3>
-        <div className="five-s-actions-table" role="table" aria-label="Printer Audit actions">
+        <div className="five-s-actions-table" role="table" aria-label={`${department} 5S audit actions`}>
           <div className="five-s-actions-row head" role="row"><span>Action required</span><span>Owner</span><span>Due date</span></div>
           {actions.length ? actions.map((row) => <div className="five-s-actions-row" role="row" key={row.sourceRow}><span>{row.actionRequired || "—"}</span><span>{row.owner || "Unassigned"}</span><span>{row.dueDate || "Not set"}</span></div>) : <p className="five-s-empty">No actions are recorded in columns F–H yet.</p>}
         </div>
@@ -116,7 +125,7 @@ export function FiveSWorkspace({ department }: { department: string }) {
 
     <article className="card five-s-sheet-card">
       <div className="card-title-row">
-        <div><span className="section-kicker">Printer Audit · columns A–E</span><h3>Working audit</h3><p>Edit a cell and leave it to save the app working copy.</p></div>
+        <div><span className="section-kicker">{sourceName} · columns A–E</span><h3>Working audit</h3><p>Edit a cell and leave it to save the {department} working copy.</p></div>
         {sourceUrl && <a className="button button-secondary" href={sourceUrl} target="_blank" rel="noreferrer">Open source sheet ↗</a>}
       </div>
       <div className="five-s-sheet-scroll">

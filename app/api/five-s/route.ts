@@ -4,32 +4,31 @@ import {
   FIVE_S_HEADINGS,
   FIVE_S_SCORES,
   FiveSAuditRow,
-  parsePrinterAuditCsv,
-  printerAuditActions,
+  fiveSAuditActions,
+  getFiveSAuditConfig,
+  parseFiveSAuditCsv,
 } from "../../../lib/five-s-audit";
 import { applyFiveSOverrides, saveFiveSOverride } from "../../../lib/five-s-audit-store";
 
 export const dynamic = "force-dynamic";
 
 const SHEET_ID = "1yr3iZTR3lRZOlL2gOKsPgCniD0TJMnNC";
-const PRINTER_AUDIT_GID = "1116237291";
-const PRINTER_AUDIT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${PRINTER_AUDIT_GID}`;
-export const PRINTER_AUDIT_SOURCE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${PRINTER_AUDIT_GID}#gid=${PRINTER_AUDIT_GID}`;
-
 export async function GET(request: Request) {
   const department = new URL(request.url).searchParams.get("department") || "";
-  if (department !== "Printers") {
+  const config = getFiveSAuditConfig(department);
+  if (!config) {
     return NextResponse.json({ available: false, department, rows: [], actions: [], overallScore: 0 });
   }
 
   try {
-    const response = await fetch(PRINTER_AUDIT_URL, {
+    const auditUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(config.sheetName)}`;
+    const response = await fetch(auditUrl, {
       cache: "no-store",
       headers: { "User-Agent": "Vivad SPARK 5S workspace" },
     });
     if (!response.ok) throw new Error(`Google Sheets returned ${response.status}`);
 
-    const sourceRows = parsePrinterAuditCsv(await response.text());
+    const sourceRows = parseFiveSAuditCsv(await response.text());
     let rows = sourceRows;
     let storageAvailable = true;
     try {
@@ -43,12 +42,13 @@ export async function GET(request: Request) {
       available: true,
       department,
       rows,
-      actions: printerAuditActions(rows),
+      actions: fiveSAuditActions(rows),
       overallScore: calculateFiveSScore(rows),
       storageAvailable,
       refreshedAt: new Date().toISOString(),
-      source: "Vivad 5S Audit – Printer Audit",
-      sourceUrl: PRINTER_AUDIT_SOURCE,
+      source: `Vivad 5S Audit – ${config.sheetName}`,
+      sourceName: config.sheetName,
+      sourceUrl: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=${config.gid}`,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json({
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       rows: [],
       actions: [],
       overallScore: 0,
-      error: error instanceof Error ? error.message : "The Printer Audit could not be loaded.",
+      error: error instanceof Error ? error.message : `The ${config.sheetName} could not be loaded.`,
     }, { status: 502 });
   }
 }
@@ -65,10 +65,11 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json() as Record<string, unknown>;
-    if (body.department !== "Printers") return validationError("Only the Printers trial is available.");
+    const department = clean(body.department, 40);
+    if (!getFiveSAuditConfig(department)) return validationError("Select a valid 5S audit department.");
     const row = validRow(body.row);
-    if (!row) return validationError("Enter valid Printer Audit values.");
-    return NextResponse.json({ result: await saveFiveSOverride("Printers", row) });
+    if (!row) return validationError("Enter valid 5S audit values.");
+    return NextResponse.json({ result: await saveFiveSOverride(department, row) });
   } catch (error) {
     console.error("5S row update failed", error);
     return NextResponse.json({ error: "The audit row could not be saved. Please try again." }, { status: 503 });

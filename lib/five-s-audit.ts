@@ -8,6 +8,36 @@ export const FIVE_S_HEADINGS = [
 
 export const FIVE_S_SCORES = ["", "0", "1", "2", "3", "N/A"] as const;
 
+export const FIVE_S_AUDIT_DEPARTMENTS = [
+  "CST",
+  "Prepress",
+  "Printers",
+  "Cutters",
+  "Fab1",
+  "Framing",
+  "Sew",
+  "Light Box",
+  "Office",
+  "Despatch",
+] as const;
+
+export const FIVE_S_AUDIT_CONFIG: Record<(typeof FIVE_S_AUDIT_DEPARTMENTS)[number], { sheetName: string; gid: string }> = {
+  CST: { sheetName: "Office Audit", gid: "599377197" },
+  Prepress: { sheetName: "Office Audit", gid: "599377197" },
+  Printers: { sheetName: "Printer Audit", gid: "1116237291" },
+  Cutters: { sheetName: "Cutter Audit", gid: "1289253712" },
+  Fab1: { sheetName: "Fabrication Audit", gid: "1235865249" },
+  Framing: { sheetName: "Fabrication Audit", gid: "1235865249" },
+  Sew: { sheetName: "Fabrication Audit", gid: "1235865249" },
+  "Light Box": { sheetName: "Lightbox Audit", gid: "1199911755" },
+  Office: { sheetName: "Office Audit", gid: "599377197" },
+  Despatch: { sheetName: "Despatch Audit", gid: "1412019244" },
+};
+
+export function getFiveSAuditConfig(department: string) {
+  return FIVE_S_AUDIT_CONFIG[department as keyof typeof FIVE_S_AUDIT_CONFIG] ?? null;
+}
+
 export type FiveSAuditRow = {
   sourceRow: number;
   heading: string;
@@ -56,7 +86,7 @@ export function parseCsv(input: string) {
   return rows;
 }
 
-export function parsePrinterAuditCsv(csv: string): FiveSAuditRow[] {
+export function parseFiveSAuditCsv(csv: string): FiveSAuditRow[] {
   return parseCsv(csv)
     .map((row, index) => ({ row, sourceRow: index + 1 }))
     .filter(({ row }) => /^\d{1,2}$/.test(clean(row[1])))
@@ -84,9 +114,12 @@ export function calculateFiveSScore(rows: FiveSAuditRow[]) {
   return Math.round((scored.reduce((total, score) => total + score, 0) / (scored.length * 3)) * 100);
 }
 
-export function printerAuditActions(rows: FiveSAuditRow[]) {
+export function fiveSAuditActions(rows: FiveSAuditRow[]) {
   return rows.filter((row) => row.actionRequired || row.owner || row.dueDate);
 }
+
+export const parsePrinterAuditCsv = parseFiveSAuditCsv;
+export const printerAuditActions = fiveSAuditActions;
 
 function normaliseScore(value = "") {
   const score = clean(value).toUpperCase();

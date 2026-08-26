@@ -34,7 +34,7 @@ test("strategy navigation exposes Overview, Safety, Quality, Delivery and 5S", (
   assert.match(strategy, /view === "5S"/);
   assert.match(strategy, /\{plan\.team\} 5S/);
   assert.match(strategy, /<FiveSWorkspace department=\{department\}/);
-  assert.match(fiveSWorkspace, /department !== "Printers"/);
+  assert.match(fiveSWorkspace, /getFiveSAuditConfig\(department\)/);
 });
 
 test("legacy strategy links continue to open the renamed views", () => {
