@@ -56,6 +56,7 @@ test("every department is mapped to a live 5S audit template", () => {
 test("department 5S pages use the linked audit workbook and persist separate A–E overrides", () => {
   const route = readFileSync(new URL("../app/api/five-s/route.ts", import.meta.url), "utf8");
   const workspace = readFileSync(new URL("../app/strategy/five-s-workspace.tsx", import.meta.url), "utf8");
+  const scorePrint = readFileSync(new URL("../app/strategy/five-s-score-print.ts", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../netlify/database/migrations/20260825090000_create_five_s_audit_overrides/migration.sql", import.meta.url), "utf8");
   assert.match(route, /1yr3iZTR3lRZOlL2gOKsPgCniD0TJMnNC/);
@@ -68,6 +69,13 @@ test("department 5S pages use the linked audit workbook and persist separate A�
   assert.match(workspace, /E · Evidence \/ comments/);
   assert.match(workspace, /Action required/);
   assert.match(workspace, /Overall score/);
+  assert.match(workspace, /Print overall score/);
+  assert.match(workspace, /printFiveSScorePoster/);
+  assert.match(scorePrint, /@page \{ size: A4 portrait/);
+  assert.match(scorePrint, /Area:<\/strong> \$\{safeDepartment\}/);
+  assert.match(scorePrint, /Printed:<\/strong> \$\{safeDate\}/);
+  assert.match(scorePrint, /\/vivad-logo\.png/);
+  assert.match(scorePrint, /printWindow\.print\(\)/);
   assert.match(workspace, /\/printer-5s-sort-qr\.png/);
   assert.match(workspace, /Vivad 5S submission form QR code/);
   assert.match(workspace, /height: "auto", overflow: "visible"/);

@@ -223,6 +223,7 @@ h1, h2, h3 { margin: 0; color: var(--grey); font-family: "Cabin", "Open Sans", s
 .five-s-score-chart strong, .five-s-score-chart small { display: block; }
 .five-s-score-chart strong { color: var(--grey); font-size: 30px; }
 .five-s-score-chart small, .score-card > p { color: var(--muted); font-size: 10px; }
+.score-print-button { margin-top: 14px; }
 .five-s-actions-table { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
 .five-s-actions-row { display: grid; grid-template-columns: minmax(180px,1fr) 100px 90px; min-height: 46px; border-bottom: 1px solid #eceef0; }
 .five-s-actions-row:last-child { border-bottom: 0; }

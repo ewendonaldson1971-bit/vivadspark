@@ -3,6 +3,7 @@
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { FIVE_S_HEADINGS, FIVE_S_SCORES, FiveSAuditRow, calculateFiveSScore, fiveSAuditActions, getFiveSAuditConfig } from "../../lib/five-s-audit";
+import { printFiveSScorePoster } from "./five-s-score-print";
 
 type FiveSResponse = {
   available: boolean;
@@ -23,6 +24,7 @@ export function FiveSWorkspace({ department }: { department: string }) {
   const [saveStatus, setSaveStatus] = useState<Record<number, string>>({});
   const overallScore = useMemo(() => calculateFiveSScore(rows), [rows]);
   const actions = useMemo(() => fiveSAuditActions(rows), [rows]);
+  const scoredCount = rows.filter((row) => /^[0-3]$/.test(row.score)).length;
 
   useEffect(() => {
     const config = getFiveSAuditConfig(department);
@@ -110,7 +112,15 @@ export function FiveSWorkspace({ department }: { department: string }) {
         <div className="five-s-score-chart" role="img" aria-label={`${department} 5S audit overall score ${overallScore}%`} style={{ "--five-s-score": `${overallScore * 3.6}deg` } as CSSProperties}>
           <span><strong>{overallScore}%</strong><small>overall</small></span>
         </div>
-        <p>{rows.filter((row) => /^[0-3]$/.test(row.score)).length} of {rows.length || 20} questions scored</p>
+        <p>{scoredCount} of {rows.length || 20} questions scored</p>
+        <button
+          className="button button-secondary score-print-button"
+          type="button"
+          disabled={loading || !rows.length}
+          onClick={() => printFiveSScorePoster({ department, overallScore, scoredCount, totalQuestions: rows.length })}
+        >
+          Print overall score
+        </button>
       </article>
 
       <article className="card five-s-summary-card actions-card">
