@@ -505,6 +505,14 @@ test("VivaDocs provides durable SOP creation, media and PDF workflows without QR
   assert.match(workflow, /Remove image/);
   assert.match(workflow, /beforeunload/);
   assert.match(workflow, /Finish SOP/);
+  assert.match(workflow, /optimiseSopImage/);
+  assert.match(workflow, /mobileSafeId/);
+  assert.match(workflow, /crypto\.getRandomValues/);
+  assert.match(workflow, /MOBILE_IMAGE_TARGET_BYTES/);
+  assert.match(workflow, /MAX_SOP_UPLOAD_BYTES/);
+  assert.match(workflow, /image\/\*,\.heic,\.heif/);
+  assert.match(workflow, /response\.status === 413/);
+  assert.match(workflow, /Phone photos are automatically resized and optimised/);
   assert.match(workflow, /Edit SOP/);
   assert.match(workflow, /<SopPdfActions/);
   assert.match(pdfActions, /export const MAX_STEPS_PER_PDF_PAGE = 4/);
