@@ -22,6 +22,12 @@ type CloudflareResponse = {
   errors?: Array<{ message?: string }>;
 };
 
+type CloudflareTokenResponse = {
+  success: boolean;
+  result?: { token?: string };
+  errors?: Array<{ message?: string }>;
+};
+
 type DeleteVideoRequest = {
   uid?: unknown;
 };
@@ -118,20 +124,62 @@ async function repairPlaybackOrigins(
     video.allowedOrigins = allowedOrigins;
   }));
 
-  // This is diagnostic only. Cloudflare's playback/thumbnail endpoints can be
-  // briefly unavailable after encoding, so a failed probe must never hide an
-  // otherwise ready video from the player.
-  await Promise.all(videos.map(async (video) => {
-    video.deliveryReady = await isPlaybackAvailable(video);
-  }));
-
   return videosToRepair.length;
 }
 
-async function isPlaybackAvailable(video: CloudflareVideo) {
-  if (!isEncodingComplete(video)) return false;
-  const playbackUrl = video.playback?.hls || video.thumbnail;
-  if (!playbackUrl) return true;
+async function createSignedPlaybackToken(
+  videoUid: string,
+  accountId: string,
+  apiToken: string,
+) {
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/stream/${encodeURIComponent(videoUid)}/token`,
+    {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        exp: Math.floor(Date.now() / 1000) + 60 * 60,
+      }),
+    },
+  );
+  const payload = (await response.json()) as CloudflareTokenResponse;
+  const token = payload.result?.token?.trim() ?? "";
+  if (!response.ok || !payload.success || !token) {
+    throw new Error(
+      payload.errors?.[0]?.message ||
+        `Cloudflare could not create secure playback for ${videoUid}.`,
+    );
+  }
+  return token;
+}
+
+function streamHostname(video: CloudflareVideo, configuredHost: string) {
+  for (const value of [video.playback?.hls, video.thumbnail]) {
+    if (!value) continue;
+    try {
+      return new URL(value).hostname;
+    } catch {
+      // Try the next provider URL before falling back to configuration.
+    }
+  }
+  return normaliseStreamHost(configuredHost);
+}
+
+function streamAssetUrls(hostname: string, identifier: string) {
+  if (!hostname || !identifier) return { playbackUrl: "", thumbnail: "" };
+  const base = `https://${hostname}/${identifier}`;
+  return {
+    playbackUrl: `${base}/manifest/video.m3u8`,
+    thumbnail: `${base}/thumbnails/thumbnail.jpg?time=1s&height=360`,
+  };
+}
+
+async function isPlaybackAvailable(playbackUrl: string, encodingComplete: boolean) {
+  if (!encodingComplete || !playbackUrl) return false;
   try {
     const response = await fetch(playbackUrl, {
       method: "GET",
@@ -199,6 +247,35 @@ export async function GET(request: Request) {
       .filter((video) => video.uid)
       .map(async (video) => {
         const fallbackName = `Training video ${video.uid?.slice(0, 6)}`;
+        const providerReady = isEncodingComplete(video);
+        const requiresSignedUrls = Boolean(video.requireSignedURLs);
+        const hostname = streamHostname(video, env.customerSubdomain);
+        let playbackUrl = video.playback?.hls ?? "";
+        let thumbnail = video.thumbnail ?? "";
+        let securePlaybackError = "";
+
+        if (providerReady && requiresSignedUrls && video.uid) {
+          try {
+            const token = await createSignedPlaybackToken(
+              video.uid,
+              env.accountId,
+              env.apiToken,
+            );
+            ({ playbackUrl, thumbnail } = streamAssetUrls(hostname, token));
+          } catch (error) {
+            playbackUrl = "";
+            thumbnail = "";
+            securePlaybackError = error instanceof Error
+              ? error.message
+              : "Secure Cloudflare playback could not be created.";
+          }
+        } else if (providerReady && video.uid) {
+          const fallbackAssets = streamAssetUrls(hostname, video.uid);
+          playbackUrl ||= fallbackAssets.playbackUrl;
+          thumbnail ||= fallbackAssets.thumbnail;
+        }
+
+        const deliveryReady = await isPlaybackAvailable(playbackUrl, providerReady);
         return {
           id: video.uid,
           videoUid: video.uid,
@@ -210,18 +287,19 @@ export async function GET(request: Request) {
           level: textMeta(video.meta, "level") || "Vivad learning",
           owner: textMeta(video.meta, "owner") || "Vivad",
           durationSeconds: Math.max(0, Math.round(video.duration ?? 0)),
-          thumbnail: video.thumbnail ?? "",
-          playbackUrl: video.playback?.hls ?? "",
+          thumbnail,
+          playbackUrl,
           // Encoding completion alone is insufficient: a usable HLS URL must
           // exist and respond successfully before the UI calls a video ready.
-          ready: Boolean(isEncodingComplete(video) && video.playback?.hls && video.deliveryReady),
-          providerReady: isEncodingComplete(video),
-          deliveryError: Boolean(isEncodingComplete(video) && (!video.playback?.hls || !video.deliveryReady)),
-          status: isEncodingComplete(video) && (!video.playback?.hls || !video.deliveryReady)
+          ready: Boolean(providerReady && playbackUrl && deliveryReady),
+          providerReady,
+          deliveryError: Boolean(providerReady && (!playbackUrl || !deliveryReady)),
+          securePlaybackError: securePlaybackError || null,
+          status: providerReady && (!playbackUrl || !deliveryReady)
             ? "delivery-error"
             : video.status?.state ?? "unknown",
           progress: video.status?.pctComplete ?? null,
-          requiresSignedUrls: Boolean(video.requireSignedURLs),
+          requiresSignedUrls,
           created: video.created ?? null,
           canDelete: canDeleteTrainingVideos(username),
         };

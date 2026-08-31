@@ -632,7 +632,7 @@ export default function TrainingPage() {
   const isProtected = Boolean(activeCourse.requiresSignedUrls);
   const isReady = activeCourse.ready !== false;
   const hasDeliveryError = Boolean(activeCourse.deliveryError);
-  const isConnected = Boolean(!isYoutube && activeCourse.playbackUrl && activeUid?.trim() && isReady && !hasDeliveryError && !isProtected);
+  const isConnected = Boolean(!isYoutube && activeCourse.playbackUrl && activeUid?.trim() && isReady && !hasDeliveryError);
   const completionRate = libraryCourses.length ? Math.round((completed.filter((id) => libraryCourses.some((course) => course.id === id)).length / libraryCourses.length) * 100) : 0;
   const selectedPerson = people.find((person) => person.id === selectedPersonId);
   const departmentPeople = people.filter((person) => person.department === selectedDepartment);
@@ -1115,9 +1115,9 @@ export default function TrainingPage() {
             ) : (
               <div className="training-player-empty">
                 <span className="stream-mark"><i /><i /><i /></span>
-                <strong>{isProtected ? "Protected Stream video" : hasDeliveryError ? "Cloudflare could not deliver this video" : !isReady ? "Video is still processing" : "Connect this module to Cloudflare Stream"}</strong>
-                <p>{isProtected ? "This video requires a signed playback token. Add user authentication before enabling secure viewing on the public Netlify deployment." : hasDeliveryError ? "The upload was encoded, but Cloudflare is returning a playback error. Try again now; if it continues, upload the original file again." : !isReady ? "Cloudflare is encoding this video. It will become playable here automatically when processing is complete." : "Add your customer subdomain and this video’s UID to start adaptive playback."}</p>
-                {hasDeliveryError ? <button type="button" onClick={() => void refreshLibrary()}>Try playback again</button> : !isProtected && isReady && <button type="button" onClick={() => setConfigOpen(true)}>Add Stream video</button>}
+                <strong>{isProtected ? "Secure playback is temporarily unavailable" : hasDeliveryError ? "Cloudflare could not deliver this video" : !isReady ? "Video is still processing" : "Connect this module to Cloudflare Stream"}</strong>
+                <p>{isProtected ? "Vivad SPARK could not create the short-lived signed playback link. Try again to request a fresh secure link." : hasDeliveryError ? "The upload was encoded, but Cloudflare is returning a playback error. Try again now; if it continues, upload the original file again." : !isReady ? "Cloudflare is encoding this video. It will become playable here automatically when processing is complete." : "Add your customer subdomain and this video’s UID to start adaptive playback."}</p>
+                {hasDeliveryError || isProtected ? <button type="button" onClick={() => void refreshLibrary()}>Try playback again</button> : isReady && <button type="button" onClick={() => setConfigOpen(true)}>Add Stream video</button>}
               </div>
             )}
           </div>
@@ -1152,14 +1152,14 @@ export default function TrainingPage() {
           )}
           <div className="training-grid">
             {filteredCourses.map((course, index) => {
-              const connected = Boolean(course.youtubeId || (course.playbackUrl && (config.videoIds[course.id] || course.videoUid) && course.ready === true && !course.deliveryError && !course.requiresSignedUrls));
+              const connected = Boolean(course.youtubeId || (course.playbackUrl && (config.videoIds[course.id] || course.videoUid) && course.ready === true && !course.deliveryError));
               const done = completed.includes(course.id);
               return (
                 <article className={activeId === course.id ? "training-card active" : "training-card"} key={course.id}>
                   <button className={`training-card-visual ${course.accent} ${course.thumbnail ? "has-thumbnail" : ""}`} style={course.thumbnail ? { backgroundImage: `linear-gradient(rgba(26,30,35,.12), rgba(26,30,35,.42)), url(${course.thumbnail})` } : undefined} type="button" onClick={() => { setActiveId(course.id); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label={`Open ${course.title}`}>
                     <span className="training-card-number">{String(index + 1).padStart(2, "0")}</span>
                     <span className="training-play">▶</span>
-                    <span className={connected ? "stream-state connected" : "stream-state"}>{course.youtubeId ? "YOUTUBE LINK" : course.requiresSignedUrls ? "SIGNED / LOCKED" : course.deliveryError ? "PLAYBACK ERROR" : course.ready === false ? "PROCESSING" : connected ? "STREAM READY" : "ADD VIDEO"}</span>
+                    <span className={connected ? "stream-state connected" : "stream-state"}>{course.youtubeId ? "YOUTUBE LINK" : course.ready === false ? "PROCESSING" : course.deliveryError ? course.requiresSignedUrls ? "SECURE PLAYBACK ERROR" : "PLAYBACK ERROR" : connected ? course.requiresSignedUrls ? "SECURE STREAM" : "STREAM READY" : "ADD VIDEO"}</span>
                   </button>
                   {(course.source === "youtube" || course.source === "stream") && (
                     <button
