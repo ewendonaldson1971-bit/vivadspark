@@ -178,8 +178,8 @@ function streamAssetUrls(hostname: string, identifier: string) {
   };
 }
 
-async function isPlaybackAvailable(playbackUrl: string, encodingComplete: boolean) {
-  if (!encodingComplete || !playbackUrl) return false;
+async function probePlayback(playbackUrl: string, encodingComplete: boolean) {
+  if (!encodingComplete || !playbackUrl) return { available: false, status: null };
   try {
     const response = await fetch(playbackUrl, {
       method: "GET",
@@ -189,9 +189,9 @@ async function isPlaybackAvailable(playbackUrl: string, encodingComplete: boolea
         Range: "bytes=0-1023",
       },
     });
-    return response.ok;
+    return { available: response.ok, status: response.status };
   } catch {
-    return false;
+    return { available: false, status: null };
   }
 }
 
@@ -275,7 +275,8 @@ export async function GET(request: Request) {
           thumbnail ||= fallbackAssets.thumbnail;
         }
 
-        const deliveryReady = await isPlaybackAvailable(playbackUrl, providerReady);
+        const deliveryProbe = await probePlayback(playbackUrl, providerReady);
+        const deliveryReady = deliveryProbe.available;
         return {
           id: video.uid,
           videoUid: video.uid,
@@ -294,6 +295,7 @@ export async function GET(request: Request) {
           ready: Boolean(providerReady && playbackUrl && deliveryReady),
           providerReady,
           deliveryError: Boolean(providerReady && (!playbackUrl || !deliveryReady)),
+          deliveryStatus: deliveryProbe.status,
           securePlaybackError: securePlaybackError || null,
           status: providerReady && (!playbackUrl || !deliveryReady)
             ? "delivery-error"

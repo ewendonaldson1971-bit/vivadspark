@@ -135,7 +135,7 @@ test("includes the Cloudflare Stream training academy", async () => {
   assert.match(route, /api\.cloudflare\.com\/client\/v4\/accounts/);
   assert.match(route, /Authorization: `Bearer \$\{env\.apiToken\}`/);
   assert.match(route, /repairPlaybackOrigins/);
-  assert.match(route, /isPlaybackAvailable/);
+  assert.match(route, /probePlayback/);
   assert.match(route, /createSignedPlaybackToken/);
   assert.match(route, /streamAssetUrls/);
   assert.match(route, /stream\/\$\{encodeURIComponent\(videoUid\)\}\/token/);
@@ -151,6 +151,7 @@ test("includes the Cloudflare Stream training academy", async () => {
   assert.match(route, /ready: Boolean\(providerReady && playbackUrl && deliveryReady\)/);
   assert.match(route, /\(\{ playbackUrl, thumbnail \} = streamAssetUrls\(hostname, token\)\)/);
   assert.match(route, /deliveryError/);
+  assert.match(route, /deliveryStatus: deliveryProbe\.status/);
   assert.match(route, /allowedOrigins/);
   assert.match(route, /vivadspark\.netlify\.app/);
   assert.match(page, /key=\{`\$\{activeCourse\.playbackUrl\}-\$\{activeUid\}`\}/);
@@ -159,7 +160,10 @@ test("includes the Cloudflare Stream training academy", async () => {
   assert.match(page, /SECURE STREAM/);
   assert.match(page, /Secure playback is temporarily unavailable/);
   assert.doesNotMatch(page, /SIGNED \/ LOCKED/);
-  assert.match(page, /Try playback again/);
+  assert.match(page, /Replace failed video/);
+  assert.match(page, /openReplacementUploader/);
+  assert.match(page, /HTTP \$\{activeCourse\.deliveryStatus\}/);
+  assert.match(page, /!video\.deliveryError && !video\.requiresSignedUrls/);
   assert.match(page, /window\.setTimeout\(\(\) => void refreshLibrary\(\), 8_000\)/);
   assert.match(page, /Permanently delete/);
   assert.match(page, /aria-label=\{`Delete \$\{course\.title\}`\}/);

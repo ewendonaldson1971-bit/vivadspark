@@ -19,6 +19,7 @@ type Course = {
   thumbnail?: string;
   ready?: boolean;
   deliveryError?: boolean;
+  deliveryStatus?: number | null;
   requiresSignedUrls?: boolean;
   source?: "stream" | "youtube";
   youtubeId?: string;
@@ -45,6 +46,7 @@ type StreamLibraryResponse = {
     thumbnail: string;
     ready: boolean;
     deliveryError?: boolean;
+    deliveryStatus?: number | null;
     requiresSignedUrls: boolean;
     created?: string | null;
     canDelete?: boolean;
@@ -455,6 +457,7 @@ export default function TrainingPage() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "preparing" | "uploading" | "processing" | "error">("idle");
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadSource, setUploadSource] = useState<"file" | "youtube">("file");
+  const [replacementCourse, setReplacementCourse] = useState<Course | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [youtubeCourses, setYoutubeCourses] = useState<Course[]>([]);
@@ -561,7 +564,7 @@ export default function TrainingPage() {
   }, [refreshLibrary]);
 
   useEffect(() => {
-    if (!library.connected || !library.videos.some((video) => !video.ready && !video.requiresSignedUrls)) return;
+    if (!library.connected || !library.videos.some((video) => !video.ready && !video.deliveryError && !video.requiresSignedUrls)) return;
     const timer = window.setTimeout(() => void refreshLibrary(), 8_000);
     return () => window.clearTimeout(timer);
   }, [library, refreshLibrary]);
@@ -599,6 +602,7 @@ export default function TrainingPage() {
       thumbnail: video.thumbnail,
       ready: video.ready,
       deliveryError: video.deliveryError,
+      deliveryStatus: video.deliveryStatus,
       requiresSignedUrls: video.requiresSignedUrls,
       created: video.created ?? null,
       canDelete: video.canDelete,
@@ -937,6 +941,18 @@ export default function TrainingPage() {
     setSelectedFile(null);
     setDragActive(false);
     setUploadSource("file");
+    setReplacementCourse(null);
+    setUploadOpen(true);
+  }
+
+  function openReplacementUploader(course: Course) {
+    setUploadStatus("idle");
+    setUploadMessage("");
+    setUploadProgress(0);
+    setSelectedFile(null);
+    setDragActive(false);
+    setUploadSource("file");
+    setReplacementCourse(course);
     setUploadOpen(true);
   }
 
@@ -1116,8 +1132,8 @@ export default function TrainingPage() {
               <div className="training-player-empty">
                 <span className="stream-mark"><i /><i /><i /></span>
                 <strong>{isProtected ? "Secure playback is temporarily unavailable" : hasDeliveryError ? "Cloudflare could not deliver this video" : !isReady ? "Video is still processing" : "Connect this module to Cloudflare Stream"}</strong>
-                <p>{isProtected ? "Vivad SPARK could not create the short-lived signed playback link. Try again to request a fresh secure link." : hasDeliveryError ? "The upload was encoded, but Cloudflare is returning a playback error. Try again now; if it continues, upload the original file again." : !isReady ? "Cloudflare is encoding this video. It will become playable here automatically when processing is complete." : "Add your customer subdomain and this video’s UID to start adaptive playback."}</p>
-                {hasDeliveryError || isProtected ? <button type="button" onClick={() => void refreshLibrary()}>Try playback again</button> : isReady && <button type="button" onClick={() => setConfigOpen(true)}>Add Stream video</button>}
+                <p>{isProtected ? "Vivad SPARK could not create the short-lived signed playback link. Try again to request a fresh secure link." : hasDeliveryError ? `Cloudflare encoded this upload, but its playback files are unavailable${activeCourse.deliveryStatus ? ` (HTTP ${activeCourse.deliveryStatus})` : ""}. Replace it from the original video file to restore playback.` : !isReady ? "Cloudflare is encoding this video. It will become playable here automatically when processing is complete." : "Add your customer subdomain and this video’s UID to start adaptive playback."}</p>
+                {hasDeliveryError && !isProtected ? <button type="button" onClick={() => openReplacementUploader(activeCourse)}>Replace failed video</button> : isProtected ? <button type="button" onClick={() => void refreshLibrary()}>Try secure playback again</button> : isReady && <button type="button" onClick={() => setConfigOpen(true)}>Add Stream video</button>}
               </div>
             )}
           </div>
@@ -1258,13 +1274,13 @@ export default function TrainingPage() {
 
       {uploadOpen && (
         <div className="stream-modal-backdrop" role="presentation" onMouseDown={() => uploadStatus !== "uploading" && setUploadOpen(false)}>
-          <form className="stream-modal training-upload-modal" onSubmit={uploadVideo} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="stream-modal-head"><div><span className="training-eyebrow">TRAINING VIDEO LIBRARY</span><h2>Add a training video</h2></div><button type="button" disabled={uploadStatus === "uploading"} onClick={() => setUploadOpen(false)} aria-label="Close uploader">×</button></div>
+          <form key={replacementCourse?.id ?? "new-video"} className="stream-modal training-upload-modal" onSubmit={uploadVideo} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="stream-modal-head"><div><span className="training-eyebrow">TRAINING VIDEO LIBRARY</span><h2>{replacementCourse ? "Replace failed video" : "Add a training video"}</h2></div><button type="button" disabled={uploadStatus === "uploading"} onClick={() => setUploadOpen(false)} aria-label="Close uploader">×</button></div>
             <div className="training-source-tabs" role="tablist" aria-label="Video source">
               <button className={uploadSource === "file" ? "active" : ""} type="button" role="tab" aria-selected={uploadSource === "file"} onClick={() => { setUploadSource("file"); setUploadStatus("idle"); setUploadMessage(""); }}>↑ Upload a file</button>
               <button className={uploadSource === "youtube" ? "active" : ""} type="button" role="tab" aria-selected={uploadSource === "youtube"} onClick={() => { setUploadSource("youtube"); setUploadStatus("idle"); setUploadMessage(""); }}>▶ Paste from YouTube</button>
             </div>
-            <p>{uploadSource === "file" ? "Drag a video here or choose one from your device. It uploads directly to Cloudflare Stream, so Hoshin never handles the file or exposes the API token." : "Paste a YouTube link to add its official embedded player to your learning library. Linked modules are saved on this device."}</p>
+            <p>{replacementCourse ? `Choose the original file for “${replacementCourse.title}”. The healthy replacement will automatically take this failed upload’s place in the library.` : uploadSource === "file" ? "Drag a video here or choose one from your device. It uploads directly to Cloudflare Stream, so Hoshin never handles the file or exposes the API token." : "Paste a YouTube link to add its official embedded player to your learning library. Linked modules are saved on this device."}</p>
             {uploadSource === "file" ? (
               <label
                 className={`training-upload-drop ${dragActive ? "dragging" : ""} ${selectedFile ? "selected" : ""}`}
@@ -1282,10 +1298,10 @@ export default function TrainingPage() {
               <label className="training-youtube-field"><span>YouTube link</span><div><i>▶</i><input name="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=…" required={uploadSource === "youtube"} autoComplete="off" disabled={uploadStatus === "preparing"} /></div><small>Supports youtube.com, youtu.be, Shorts, and Live links.</small></label>
             )}
             <div className="training-upload-fields">
-              <label><span>Title</span><input name="title" placeholder="e.g. How to record a non-conformance" required disabled={uploadStatus === "uploading" || uploadStatus === "preparing"} /></label>
-              <label><span>Library / department</span><select name="category" defaultValue="Quality" disabled={uploadStatus === "uploading" || uploadStatus === "preparing"}>{Array.from(new Set([...GENERAL_TRAINING_CATEGORIES, ...departments])).map((item) => <option key={item}>{item}</option>)}</select></label>
-              <label className="training-upload-wide"><span>Description</span><textarea name="description" rows={3} placeholder="What will people learn?" disabled={uploadStatus === "uploading" || uploadStatus === "preparing"} /></label>
-              <label><span>Level</span><select name="level" defaultValue="Vivad learning" disabled={uploadStatus === "uploading" || uploadStatus === "preparing"}><option>Essential</option><option>Core skill</option><option>Leader practice</option><option>Vivad learning</option></select></label>
+              <label><span>Title</span><input name="title" defaultValue={replacementCourse?.title ?? ""} placeholder="e.g. How to record a non-conformance" required disabled={uploadStatus === "uploading" || uploadStatus === "preparing"} /></label>
+              <label><span>Library / department</span><select name="category" defaultValue={replacementCourse?.category ?? "Quality"} disabled={uploadStatus === "uploading" || uploadStatus === "preparing"}>{Array.from(new Set([...GENERAL_TRAINING_CATEGORIES, ...departments])).map((item) => <option key={item}>{item}</option>)}</select></label>
+              <label className="training-upload-wide"><span>Description</span><textarea name="description" rows={3} defaultValue={replacementCourse?.description ?? ""} placeholder="What will people learn?" disabled={uploadStatus === "uploading" || uploadStatus === "preparing"} /></label>
+              <label><span>Level</span><select name="level" defaultValue={replacementCourse?.level ?? "Vivad learning"} disabled={uploadStatus === "uploading" || uploadStatus === "preparing"}><option>Essential</option><option>Core skill</option><option>Leader practice</option><option>Vivad learning</option></select></label>
               {uploadSource === "file" && <label><span>Maximum duration</span><select name="maxDurationSeconds" defaultValue="3600" disabled={uploadStatus === "uploading" || uploadStatus === "preparing"}><option value="600">10 minutes</option><option value="1800">30 minutes</option><option value="3600">60 minutes</option><option value="7200">2 hours</option></select></label>}
             </div>
             {uploadStatus !== "idle" && <div className={`training-upload-status ${uploadStatus}`}><div><span>{uploadStatus === "processing" ? "✓" : uploadStatus === "error" ? "!" : "↑"}</span><p><strong>{uploadStatus === "preparing" ? "Preparing upload" : uploadStatus === "uploading" ? `Uploading · ${uploadProgress}%` : uploadStatus === "processing" ? uploadSource === "youtube" ? "YouTube module added" : "Processing started" : "Upload needs attention"}</strong><small>{uploadMessage}</small></p></div>{uploadStatus === "uploading" && <div className="training-upload-progress"><i style={{ width: `${uploadProgress}%` }} /></div>}</div>}
