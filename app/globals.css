@@ -6,9 +6,9 @@
   --blue-dark: #2673ca;
   --green: #7cbf1d;
   --red: #e4002b;
-  --grey: #53565a;
-  --ink: #24262a;
-  --muted: #777b82;
+  --grey: #35393e;
+  --ink: #17191d;
+  --muted: #515961;
   --surface: #f5f6f8;
   --card: #ffffff;
   --line: #e4e7eb;
@@ -25,10 +25,12 @@ body {
   background: var(--surface);
   color: var(--ink);
   font-family: "Open Sans", Arial, sans-serif;
-  font-size: 14px;
+  font-size: 15px;
 }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
+input, select, textarea { color: var(--ink); }
+input::placeholder, textarea::placeholder { color: #5d656d; opacity: 1; }
 
 .app-shell { min-height: 100vh; }
 .sidebar {
@@ -63,7 +65,7 @@ button { cursor: pointer; }
 .side-nav { padding: 14px 14px; }
 .nav-label {
   margin: 8px 12px 9px;
-  color: #a0a4aa;
+  color: #626971;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.2px;
@@ -81,7 +83,7 @@ button { cursor: pointer; }
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #6a6e74;
+  color: #454b52;
   font-weight: 600;
   text-align: left;
   text-decoration: none;
@@ -225,31 +227,31 @@ h1, h2, h3 { margin: 0; color: var(--grey); font-family: "Cabin", "Open Sans", s
 .five-s-score-chart small, .score-card > p { color: var(--muted); font-size: 10px; }
 .score-print-button { margin-top: 14px; }
 .five-s-action-form { display: grid; grid-template-columns: minmax(180px,1fr) 130px 140px auto; align-items: end; gap: 10px; margin-top: 16px; }
-.five-s-action-form label { display: grid; gap: 6px; color: #747b83; font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
-.five-s-action-form input, .five-s-actions-row input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #dfe3e7; border-radius: 7px; background: #fff; color: #555b62; font: inherit; font-size: 10px; outline: none; }
+.five-s-action-form label { display: grid; gap: 6px; color: #4d555d; font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.five-s-action-form input, .five-s-actions-row input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #d4d9de; border-radius: 7px; background: #fff; color: #252a30; font: inherit; font-size: 11px; outline: none; }
 .five-s-action-form input:focus, .five-s-actions-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(71,143,225,.14); }
 .five-s-action-form .button { min-height: 38px; white-space: nowrap; }
-.five-s-action-message { margin: 10px 0 0; color: #4d7f22; font-size: 10px; }
+.five-s-action-message { margin: 10px 0 0; color: #3d7424; font-size: 11px; font-weight: 600; }
 .five-s-actions-table { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
 .five-s-actions-row { display: grid; grid-template-columns: minmax(180px,1fr) 130px 140px 150px; align-items: center; min-height: 54px; padding: 7px; gap: 7px; border-bottom: 1px solid #eceef0; }
 .five-s-actions-row:last-child { border-bottom: 0; }
-.five-s-actions-row span { padding: 5px; color: #696e74; font-size: 10px; }
+.five-s-actions-row span { padding: 5px; color: #454c53; font-size: 11px; }
 .five-s-actions-row.head { min-height: 38px; background: #fafbfc; }
-.five-s-actions-row.head span { color: #8d9298; font-size: 8px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.five-s-actions-row.head span { color: #515961; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
 .five-s-action-controls { display: flex; align-items: center; gap: 6px; }
-.five-s-action-controls button { min-height: 32px; padding: 0 9px; border: 1px solid #dfe3e7; border-radius: 6px; background: #fff; color: var(--blue); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
+.five-s-action-controls button { min-height: 34px; padding: 0 9px; border: 1px solid #d4d9de; border-radius: 6px; background: #fff; color: var(--blue-dark); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .five-s-action-controls button.danger { color: #c32634; }
 .five-s-action-controls .save-status { min-width: 36px; padding: 0; }
-.five-s-empty { margin: 0; padding: 24px 14px; color: var(--muted); font-size: 10px; text-align: center; }
+.five-s-empty { margin: 0; padding: 24px 14px; color: var(--muted); font-size: 11px; text-align: center; }
 .five-s-sheet-card { padding: 22px; }
 .five-s-sheet-card .card-title-row { align-items: flex-start; }
 .five-s-sheet-card .card-title-row p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
 .five-s-sheet-scroll { margin-top: 18px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
 .five-s-sheet { width: 100%; min-width: 1120px; border-collapse: collapse; table-layout: fixed; }
-.five-s-sheet th { padding: 11px 9px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fafbfc; color: #858b92; font-size: 8px; letter-spacing: .45px; text-align: left; text-transform: uppercase; }
+.five-s-sheet th { padding: 11px 9px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fafbfc; color: #515961; font-size: 9px; letter-spacing: .45px; text-align: left; text-transform: uppercase; }
 .five-s-sheet td { padding: 7px; border-right: 1px solid #eceef0; border-bottom: 1px solid #eceef0; vertical-align: top; }
 .five-s-sheet th:nth-child(1) { width: 145px; }.five-s-sheet th:nth-child(2) { width: 62px; }.five-s-sheet th:nth-child(3) { width: 390px; }.five-s-sheet th:nth-child(4) { width: 92px; }.five-s-sheet th:nth-child(5) { width: 330px; }.five-s-sheet th:nth-child(6) { width: 78px; }
-.five-s-sheet :is(input,select,textarea) { width: 100%; min-height: 36px; padding: 8px 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #555b62; font: inherit; font-size: 10px; outline: none; }
+.five-s-sheet :is(input,select,textarea) { width: 100%; min-height: 38px; padding: 8px 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #252a30; font: inherit; font-size: 11px; outline: none; }
 .five-s-sheet textarea { min-height: 58px; resize: vertical; }
 .five-s-sheet :is(input,select,textarea):hover { border-color: #dbe0e5; background: #fff; }
 .five-s-sheet :is(input,select,textarea):focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(71,143,225,.14); }

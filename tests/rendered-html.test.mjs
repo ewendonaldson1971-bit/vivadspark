@@ -552,3 +552,11 @@ test("VivaDocs provides durable SOP creation, media and PDF workflows without QR
   assert.match(css, /env\(safe-area-inset-bottom\)/);
   assert.match(css, /@media print/);
 });
+
+test("shared visual system uses a high-contrast readable text palette", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /--ink:\s*#17191d/);
+  assert.match(styles, /--muted:\s*#515961/);
+  assert.match(styles, /input::placeholder, textarea::placeholder/);
+  assert.match(styles, /\.five-s-actions-row span[^}]+color:\s*#454c53/);
+});
