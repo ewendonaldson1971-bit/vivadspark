@@ -51,6 +51,12 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   ]);
 
   assert.match(page, /Where would you like to go\?/);
+  assert.match(page, /SPARK/);
+  assert.match(page, /Skills/);
+  assert.match(page, /Performance/);
+  assert.match(page, /Action/);
+  assert.match(page, /Results/);
+  assert.match(page, /Knowledge/);
   assert.match(page, /formatSydneyPortalDateTime/);
   assert.match(page, /Current date and time in Sydney/);
   assert.match(page, /href: "\/quality"/);

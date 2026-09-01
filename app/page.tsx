@@ -230,6 +230,10 @@ export default function HomePage() {
       <main>
         <section className="portal-welcome" aria-labelledby="portal-title">
           <div className="portal-container">
+            <div className="portal-spark-meaning" aria-label="SPARK means Skills, Performance, Action, Results and Knowledge">
+              <strong>SPARK</strong>
+              <span>Skills <i aria-hidden="true">•</i> Performance <i aria-hidden="true">•</i> Action <i aria-hidden="true">•</i> Results <i aria-hidden="true">•</i> Knowledge</span>
+            </div>
             <h1 id="portal-title">Where would you like to go?</h1>
             <p>Access your quality systems, training and controlled documents in one place.</p>
             <nav className="portal-destinations" aria-label="Vivad SPARK destinations">

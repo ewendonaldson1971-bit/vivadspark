@@ -744,6 +744,10 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
     linear-gradient(135deg, #f7faff 0%, #eef5fd 48%, #f9fbfe 100%);
 }
 .portal-container { width: min(100% - 40px, 1100px); margin: 0 auto; }
+.portal-spark-meaning { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 13px; margin-bottom: 15px; }
+.portal-spark-meaning strong { color: var(--red); font: 700 17px/1 "Cabin"; letter-spacing: 3.4px; }
+.portal-spark-meaning span { color: #555c65; font-size: 12px; font-weight: 700; letter-spacing: .25px; }
+.portal-spark-meaning i { margin: 0 4px; color: var(--blue); font-style: normal; }
 .portal-welcome h1 { color: #20242a; font-size: clamp(35px, 4vw, 52px); line-height: 1.05; letter-spacing: -1.2px; }
 .portal-welcome > .portal-container > p { margin: 12px 0 0; color: #727983; font-size: 15px; }
 .portal-destinations { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px 20px; margin-top: 31px; }
@@ -837,6 +841,8 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .portal-profile strong, .portal-profile i { display: none; }
   .portal-welcome { padding: 38px 0 34px; }
   .portal-container { width: min(100% - 28px, 1100px); }
+  .portal-spark-meaning { display: grid; gap: 8px; margin-bottom: 16px; }
+  .portal-spark-meaning span { font-size: 11px; line-height: 1.6; }
   .portal-welcome h1 { font-size: 34px; }
   .portal-welcome > .portal-container > p { font-size: 13px; line-height: 1.55; }
   .portal-destinations { grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
