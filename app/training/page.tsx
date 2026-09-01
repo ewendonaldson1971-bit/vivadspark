@@ -1097,6 +1097,15 @@ export default function TrainingPage() {
             <p>Short, practical learning that connects quality, problem solving, and strategy to the work.</p>
           </div>
           <div className="training-top-actions">
+            <a
+              className="training-editor-button"
+              href="https://vivad-video.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Use video editor instead (opens in a new tab)"
+            >
+              <span aria-hidden="true">✂</span> Use video editor instead
+            </a>
             <button className="training-upload-button" type="button" onClick={openUploader}><span>＋</span> Add new video</button>
             <button className="stream-config-button" type="button" onClick={() => setConfigOpen(true)}>
               <span className={library.connected || config.customerCode ? "connected" : ""} />

@@ -247,6 +247,9 @@ test("provides public access to the Stream and YouTube video uploader", async ()
   ]);
 
   assert.match(page, /Add new video/);
+  assert.match(page, /Use video editor instead/);
+  assert.match(page, /https:\/\/vivad-video\.netlify\.app\//);
+  assert.match(page, /aria-label="Use video editor instead \(opens in a new tab\)"/);
   assert.match(page, /TRAINING VIDEO LIBRARY/);
   assert.match(page, /Drag and drop your video/);
   assert.match(page, /Paste from YouTube/);
