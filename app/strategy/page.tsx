@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { StrategyCoaching, StrategyCoachingInput } from "../../lib/strategy-coaching";
+import type { SavedStrategyCoaching } from "../../lib/strategy-coaching-store";
 import { MobileWorkspaceNavigation, navigationItem, WorkspaceNavigationId } from "../components/workspace-navigation";
 import { FiveSWorkspace } from "./five-s-workspace";
 
@@ -21,13 +22,6 @@ const DEPARTMENTS = ["All departments", "CST", "Prepress", "Printers", "Cutters"
 const STRATEGY_DEPARTMENT_KEY = "vivad-strategy-department";
 const STRATEGY_COACHING_KEY = "vivad-strategy-daily-coaching";
 type Department = typeof DEPARTMENTS[number];
-
-type SavedCoaching = {
-  input: StrategyCoachingInput;
-  coaching: StrategyCoaching;
-  provider: string;
-  generatedAt: string;
-};
 
 function teamPlan(department: Department) {
   const team = department === "All departments" ? "Vivad" : department;
@@ -62,7 +56,8 @@ export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [notice, setNotice] = useState("");
-  const [coachingByDepartment, setCoachingByDepartment] = useState<Record<string, SavedCoaching>>({});
+  const [coachingByDepartment, setCoachingByDepartment] = useState<Record<string, SavedStrategyCoaching>>({});
+  const [coachingSync, setCoachingSync] = useState<"loading" | "shared" | "device">("loading");
   const [coachingStatus, setCoachingStatus] = useState<"idle" | "loading" | "error">("idle");
   const [coachingMessage, setCoachingMessage] = useState("");
   const [filter, setFilter] = useState("All");
@@ -81,6 +76,7 @@ export default function Home() {
   }));
 
   useEffect(() => {
+    let cachedCoachingRecords: Record<string, SavedStrategyCoaching> = {};
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("view");
     const legacyViews: Record<string, View> = { "X-matrix": "Safety", Initiatives: "Quality", Reviews: "Delivery" };
@@ -97,11 +93,35 @@ export default function Home() {
       setDepartment(initialDepartment as Department);
     }
     try {
-      const savedCoachingRecords = JSON.parse(window.localStorage.getItem(STRATEGY_COACHING_KEY) || "{}") as Record<string, SavedCoaching>;
-      if (savedCoachingRecords && typeof savedCoachingRecords === "object") setCoachingByDepartment(savedCoachingRecords);
+      cachedCoachingRecords = JSON.parse(window.localStorage.getItem(STRATEGY_COACHING_KEY) || "{}") as Record<string, SavedStrategyCoaching>;
+      if (cachedCoachingRecords && typeof cachedCoachingRecords === "object") setCoachingByDepartment(cachedCoachingRecords);
     } catch {
       window.localStorage.removeItem(STRATEGY_COACHING_KEY);
     }
+    fetch("/api/strategy/coaching", { credentials: "same-origin", cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as { records?: Record<string, SavedStrategyCoaching>; persisted?: boolean };
+        if (!response.ok) throw new Error("Shared coaching could not be loaded.");
+        const remoteRecords = result.records || {};
+        const merged = { ...cachedCoachingRecords, ...remoteRecords };
+        const pendingUploads = Object.entries(cachedCoachingRecords).filter(([key, local]) => {
+          const remote = remoteRecords[key];
+          return result.persisted && (!remote || Date.parse(local.generatedAt) > Date.parse(remote.generatedAt));
+        });
+        for (const [key, local] of pendingUploads) {
+          const upload = await fetch("/api/strategy/coaching", {
+            method: "PUT",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(local),
+          });
+          if (upload.ok) merged[key] = local;
+        }
+        setCoachingByDepartment(merged);
+        window.localStorage.setItem(STRATEGY_COACHING_KEY, JSON.stringify(merged));
+        setCoachingSync(result.persisted ? "shared" : "device");
+      })
+      .catch(() => setCoachingSync("device"));
   }, []);
 
   const activeNavigation: WorkspaceNavigationId =
@@ -155,12 +175,14 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      const result = await response.json() as { coaching?: StrategyCoaching; provider?: string; error?: string };
+      const result = await response.json() as { coaching?: StrategyCoaching; provider?: string; generatedAt?: string; persisted?: boolean; warning?: string; error?: string };
       if (!response.ok || !result.coaching) throw new Error(result.error || "Daily coaching could not be generated.");
-      const record: SavedCoaching = { input, coaching: result.coaching, provider: result.provider || "structured-coaching", generatedAt: new Date().toISOString() };
+      const record: SavedStrategyCoaching = { input, coaching: result.coaching, provider: result.provider || "structured-coaching", generatedAt: result.generatedAt || new Date().toISOString() };
       const nextRecords = { ...coachingByDepartment, [department]: record };
       setCoachingByDepartment(nextRecords);
       window.localStorage.setItem(STRATEGY_COACHING_KEY, JSON.stringify(nextRecords));
+      setCoachingSync(result.persisted ? "shared" : "device");
+      setCoachingMessage(result.warning || "");
       setCoachingStatus("idle");
     } catch (error) {
       setCoachingStatus("error");
@@ -373,6 +395,7 @@ export default function Home() {
                 <button className="button button-primary coaching-submit" type="submit" disabled={coachingStatus === "loading"}>{coachingStatus === "loading" ? "Analysing…" : "Generate tomorrow’s coaching"}</button>
               </form>
               {coachingStatus === "error" && <p className="coaching-error" role="alert">{coachingMessage}</p>}
+              {coachingStatus !== "error" && coachingMessage && <p className="coaching-sync-note" role="status">{coachingMessage}</p>}
               {savedCoaching && (
                 <div className="coaching-result" aria-live="polite">
                   <div className="coaching-focus"><span>{savedCoaching.coaching.focusArea}</span><small>{savedCoaching.provider === "openai" ? "AI generated" : "Structured coaching"}</small></div>
@@ -392,7 +415,7 @@ export default function Home() {
                   <h3 className="coaching-actions-title">Tomorrow’s priority actions</h3>
                   <ol>{savedCoaching.coaching.suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ol>
                   <blockquote>{savedCoaching.coaching.reflectionQuestion}</blockquote>
-                  <small>Generated {new Date(savedCoaching.generatedAt).toLocaleString("en-AU")} · Verify actions with the team before use.</small>
+                  <small>Generated {new Date(savedCoaching.generatedAt).toLocaleString("en-AU")} · {coachingSync === "shared" ? "Synced across signed-in devices" : coachingSync === "device" ? "Saved on this device" : "Checking shared storage"} · Verify actions with the team before use.</small>
                 </div>
               )}
             </article>

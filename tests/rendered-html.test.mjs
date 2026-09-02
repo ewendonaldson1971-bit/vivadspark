@@ -69,6 +69,8 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   assert.match(page, /\/api\/vivadocs\/skills/);
   assert.match(page, /\/api\/vivadocs\/sops/);
   assert.match(page, /\/api\/training\/videos/);
+  assert.match(page, /\/api\/machine-capacity/);
+  assert.match(page, /Live machine capability/);
   assert.match(page, /record\.status === "Competent" \|\| record\.status === "Trainer"/);
   assert.match(page, /sop\.status === "Published"/);
   assert.match(page, /event\.action\?\.trim\(\) && event\.status !== "Completed"/);

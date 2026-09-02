@@ -34,10 +34,12 @@ test("strategy coaching rejects invalid percentages and sanitises bounded contex
   assert.equal(sanitised.operationalContext.length, 2000);
 });
 
-test("Momentum submits authenticated daily data and displays generated coaching", async () => {
-  const [page, route] = await Promise.all([
+test("Momentum submits and reloads authenticated daily data across devices", async () => {
+  const [page, route, store, migration] = await Promise.all([
     readFile(new URL("../app/strategy/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/strategy/coaching/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/strategy-coaching-store.ts", import.meta.url), "utf8"),
+    readFile(new URL("../netlify/database/migrations/20260902090000_create_strategy_daily_coaching/migration.sql", import.meta.url), "utf8"),
   ]);
   assert.match(page, /Generate tomorrow’s coaching/);
   assert.match(page, /\/api\/strategy\/coaching/);
@@ -46,9 +48,18 @@ test("Momentum submits authenticated daily data and displays generated coaching"
   assert.match(page, /What your facts mean/);
   assert.match(page, /Best response:/);
   assert.match(page, /STRATEGY_COACHING_KEY/);
+  assert.match(page, /cache: "no-store"/);
+  assert.match(page, /Synced across signed-in devices/);
   assert.match(route, /process\.env\.OPENAI_API_KEY/);
   assert.match(route, /strategyCoachingJsonSchema/);
   assert.match(route, /buildStrategyCoaching/);
   assert.match(route, /Extract every distinct fact or blocker/);
   assert.match(route, /store: false/);
+  assert.match(route, /export async function GET/);
+  assert.match(route, /export async function PUT/);
+  assert.match(route, /saveStrategyCoaching/);
+  assert.match(page, /method: "PUT"/);
+  assert.match(store, /ON CONFLICT \(actor, department\) DO UPDATE/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS strategy_daily_coaching/);
+  assert.match(migration, /PRIMARY KEY \(actor, department\)/);
 });

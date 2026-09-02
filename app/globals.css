@@ -855,6 +855,21 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .portal-support h2 { margin-top: 12px; font-size: 25px; line-height: 1.15; }
 .portal-support p { margin: 13px 0 21px; color: #777d85; font-size: 12px; line-height: 1.6; }
 .portal-support a { display: flex; justify-content: space-between; gap: 10px; color: var(--blue); font-size: 11px; font-weight: 700; text-decoration: none; }
+.portal-support .portal-capacity-heading { margin: 13px 0 4px; color: #454c55; font-weight: 700; }
+.portal-capacity-chart { margin: 0 -8px 17px; }
+.portal-capacity-chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.capacity-gridline { stroke: #dfe5eb; stroke-width: 1; }
+.capacity-axis-label, .capacity-machine-label, .capacity-value { fill: #555c65; font-family: "Open Sans", sans-serif; }
+.capacity-axis-label { font-size: 7px; }
+.capacity-machine-label { font-size: 6px; }
+.capacity-value { fill: #266ebf; font-size: 7px; font-weight: 700; }
+.capacity-line { fill: none; stroke: var(--blue); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.capacity-point { fill: #fff; stroke: var(--blue); stroke-width: 2.5; }
+.portal-capacity-chart ul { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin: 2px 8px 0; padding: 0; list-style: none; }
+.portal-capacity-chart li { display: flex; justify-content: space-between; gap: 7px; color: #555c65; font-size: 8px; }
+.portal-capacity-chart li strong { color: #20242a; }
+.portal-capacity-loading, .portal-capacity-error { min-height: 160px; display: grid; place-items: center; color: #69717b; font-size: 11px; text-align: center; }
+.portal-support .portal-capacity-error { margin: 0 0 17px; color: #b41025; }
 
 @keyframes portal-shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) {
@@ -864,7 +879,8 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 @media (max-width: 920px) {
   .portal-dashboard-grid { grid-template-columns: 1fr; }
   .portal-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .portal-support { display: none; }
+  .portal-support { display: block; }
+  .portal-capacity-chart { max-width: 620px; margin-inline: auto; }
 }
 @media (max-width: 700px) {
   .portal-header { position: relative; min-height: 86px; padding: 10px 18px 30px; }

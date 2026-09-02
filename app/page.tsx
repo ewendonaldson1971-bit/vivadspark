@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatSydneyPortalDateTime } from "../lib/portal-date-time";
+import type { MachineCapacity } from "../lib/machine-capacity";
 import { MobileWorkspaceNavigation } from "./components/workspace-navigation";
 
 type DashboardMetric = {
@@ -33,6 +34,7 @@ type TrainingResponse = {
   videos?: Array<{ ready?: boolean; created?: string | null }>;
   error?: string;
 };
+type MachineCapacityResponse = { machines?: MachineCapacity[]; refreshedAt?: string; error?: string };
 
 const destinations = [
   {
@@ -87,6 +89,46 @@ function metricFromError(): DashboardMetric {
   return { value: null, detail: "Unavailable", loading: false };
 }
 
+function MachineCapacityChart({ machines }: { machines: MachineCapacity[] }) {
+  const width = 300;
+  const height = 145;
+  const left = 27;
+  const right = 8;
+  const top = 13;
+  const bottom = 28;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const points = machines.map((machine, index) => ({
+    ...machine,
+    x: left + (machines.length === 1 ? chartWidth / 2 : index * chartWidth / (machines.length - 1)),
+    y: top + (100 - machine.capacity) / 100 * chartHeight,
+  }));
+
+  return (
+    <div className="portal-capacity-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="capacity-chart-title capacity-chart-description">
+        <title id="capacity-chart-title">Machine capability percentages</title>
+        <desc id="capacity-chart-description">A line graph showing the current percentage capability for every machine in the linked Google Sheet.</desc>
+        {[0, 50, 100].map((value) => {
+          const y = top + (100 - value) / 100 * chartHeight;
+          return <g key={value}><line x1={left} x2={width - right} y1={y} y2={y} className="capacity-gridline" /><text x={left - 5} y={y + 3} textAnchor="end" className="capacity-axis-label">{value}%</text></g>;
+        })}
+        <polyline points={points.map((point) => `${point.x},${point.y}`).join(" ")} className="capacity-line" />
+        {points.map((point) => (
+          <g key={point.machine}>
+            <circle cx={point.x} cy={point.y} r="4" className="capacity-point" />
+            <text x={point.x} y={Math.max(9, point.y - 8)} textAnchor="middle" className="capacity-value">{point.capacity}%</text>
+            <text x={point.x} y={height - 8} textAnchor="middle" className="capacity-machine-label">{point.machine.length > 8 ? `${point.machine.slice(0, 7)}…` : point.machine}</text>
+          </g>
+        ))}
+      </svg>
+      <ul aria-label="Machine capability values">
+        {machines.map((machine) => <li key={machine.machine}><span>{machine.machine}</span><strong>{machine.capacity}%</strong></li>)}
+      </ul>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [username, setUsername] = useState("Signed-in user");
@@ -96,6 +138,8 @@ export default function HomePage() {
     quality: initialMetric,
     videos: initialMetric,
   });
+  const [machineCapacities, setMachineCapacities] = useState<MachineCapacity[]>([]);
+  const [machineCapacityStatus, setMachineCapacityStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     const updateTime = () => setCurrentTime(new Date());
@@ -108,13 +152,14 @@ export default function HomePage() {
     let current = true;
 
     async function loadDashboard() {
-      const [sessionResult, qualityResult, skillsResult, sopResult, trainingResult] =
+      const [sessionResult, qualityResult, skillsResult, sopResult, trainingResult, machineCapacityResult] =
         await Promise.allSettled([
           requestJson<SessionResponse>("/api/auth/session"),
           requestJson<QualityResponse>("/api/non-conformance"),
           requestJson<SkillsResponse>("/api/vivadocs/skills"),
           requestJson<SopResponse>("/api/vivadocs/sops"),
           requestJson<TrainingResponse>("/api/training/videos"),
+          requestJson<MachineCapacityResponse>("/api/machine-capacity"),
         ]);
 
       if (!current) return;
@@ -124,6 +169,14 @@ export default function HomePage() {
       const skills = skillsResult.status === "fulfilled" ? skillsResult.value : null;
       const sops = sopResult.status === "fulfilled" ? sopResult.value : null;
       const training = trainingResult.status === "fulfilled" ? trainingResult.value : null;
+      const machineCapacity = machineCapacityResult.status === "fulfilled" ? machineCapacityResult.value : null;
+
+      if (machineCapacity?.machines?.length) {
+        setMachineCapacities(machineCapacity.machines);
+        setMachineCapacityStatus("ready");
+      } else {
+        setMachineCapacityStatus("error");
+      }
 
       const nextUsername = session?.username?.trim() || "Signed-in user";
       setUsername(nextUsername);
@@ -281,7 +334,10 @@ export default function HomePage() {
             <aside className="portal-support" aria-labelledby="support-title">
               <span>VIVAD SPARK</span>
               <h2 id="support-title">Everything your team needs, in one place.</h2>
-              <p>Move between quality, training and controlled work instructions without losing your place.</p>
+              <p className="portal-capacity-heading">Live machine capability</p>
+              {machineCapacityStatus === "loading" && <div className="portal-capacity-loading" role="status">Loading machine capability…</div>}
+              {machineCapacityStatus === "error" && <p className="portal-capacity-error" role="alert">Machine capability data is temporarily unavailable.</p>}
+              {machineCapacityStatus === "ready" && <MachineCapacityChart machines={machineCapacities} />}
               <Link href="/strategy">Open strategy workspace <b aria-hidden="true">›</b></Link>
             </aside>
           </div>
