@@ -377,6 +377,19 @@ export default function Home() {
                 <div className="coaching-result" aria-live="polite">
                   <div className="coaching-focus"><span>{savedCoaching.coaching.focusArea}</span><small>{savedCoaching.provider === "openai" ? "AI generated" : "Structured coaching"}</small></div>
                   <p>{savedCoaching.coaching.summary}</p>
+                  {(savedCoaching.coaching.factResponses ?? []).length > 0 && (
+                    <div className="coaching-facts">
+                      <h3>What your facts mean</h3>
+                      {(savedCoaching.coaching.factResponses ?? []).map((response) => (
+                        <article key={`${response.fact}-${response.recommendedAction}`}>
+                          <strong>{response.fact}</strong>
+                          <p>{response.interpretation}</p>
+                          <span><b>Best response:</b> {response.recommendedAction}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                  <h3 className="coaching-actions-title">Tomorrow’s priority actions</h3>
                   <ol>{savedCoaching.coaching.suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ol>
                   <blockquote>{savedCoaching.coaching.reflectionQuestion}</blockquote>
                   <small>Generated {new Date(savedCoaching.generatedAt).toLocaleString("en-AU")} · Verify actions with the team before use.</small>

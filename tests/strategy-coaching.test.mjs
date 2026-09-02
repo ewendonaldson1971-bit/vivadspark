@@ -9,8 +9,21 @@ test("daily strategy coaching prioritises the lowest supplied S/Q/D score", () =
   const coaching = buildStrategyCoaching(input);
   assert.equal(coaching.focusArea, "Quality");
   assert.equal(coaching.suggestions.length, 3);
+  assert.equal(coaching.factResponses.length, 1);
+  assert.match(coaching.factResponses[0].recommendedAction, /inspect affected packages/i);
   assert.match(coaching.summary, /62%/);
   assert.equal(validateStrategyCoaching(coaching), true);
+});
+
+test("changed real-world blockers produce different, direct coaching", () => {
+  const packaging = buildStrategyCoaching({ department: "Despatch", safety: 81, quality: 74, delivery: 76, context: "Our quality suffered because packages got damaged while being handled.\nThe delivery team has not been taking photos of deliveries." });
+  const equipment = buildStrategyCoaching({ department: "Despatch", safety: 81, quality: 74, delivery: 76, context: "The wrapping machine failed twice and stopped the afternoon shift." });
+  assert.equal(packaging.factResponses.length, 2);
+  assert.match(packaging.factResponses[0].interpretation, /quality containment issue/i);
+  assert.match(packaging.factResponses[0].recommendedAction, /observe one package through the full handling route/i);
+  assert.match(packaging.factResponses[1].recommendedAction, /delivery photo mandatory/i);
+  assert.match(equipment.factResponses[0].recommendedAction, /maintenance/i);
+  assert.notDeepEqual(packaging.suggestions, equipment.suggestions);
 });
 
 test("strategy coaching rejects invalid percentages and sanitises bounded context", () => {
@@ -30,9 +43,12 @@ test("Momentum submits authenticated daily data and displays generated coaching"
   assert.match(page, /\/api\/strategy\/coaching/);
   assert.match(page, /credentials: "same-origin"/);
   assert.match(page, /savedCoaching\.coaching\.suggestions/);
+  assert.match(page, /What your facts mean/);
+  assert.match(page, /Best response:/);
   assert.match(page, /STRATEGY_COACHING_KEY/);
   assert.match(route, /process\.env\.OPENAI_API_KEY/);
   assert.match(route, /strategyCoachingJsonSchema/);
   assert.match(route, /buildStrategyCoaching/);
+  assert.match(route, /Extract every distinct fact or blocker/);
   assert.match(route, /store: false/);
 });
