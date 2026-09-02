@@ -3,6 +3,7 @@
 // Interactive strategy workspace.
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import type { StrategyCoaching, StrategyCoachingInput } from "../../lib/strategy-coaching";
 import { MobileWorkspaceNavigation, navigationItem, WorkspaceNavigationId } from "../components/workspace-navigation";
 import { FiveSWorkspace } from "./five-s-workspace";
 
@@ -18,7 +19,15 @@ type Initiative = {
 
 const DEPARTMENTS = ["All departments", "CST", "Prepress", "Printers", "Cutters", "Fab1", "Framing", "Sew", "Light Box", "Office", "Despatch"] as const;
 const STRATEGY_DEPARTMENT_KEY = "vivad-strategy-department";
+const STRATEGY_COACHING_KEY = "vivad-strategy-daily-coaching";
 type Department = typeof DEPARTMENTS[number];
+
+type SavedCoaching = {
+  input: StrategyCoachingInput;
+  coaching: StrategyCoaching;
+  provider: string;
+  generatedAt: string;
+};
 
 function teamPlan(department: Department) {
   const team = department === "All departments" ? "Vivad" : department;
@@ -53,6 +62,9 @@ export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [coachingByDepartment, setCoachingByDepartment] = useState<Record<string, SavedCoaching>>({});
+  const [coachingStatus, setCoachingStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [coachingMessage, setCoachingMessage] = useState("");
   const [filter, setFilter] = useState("All");
   const [initiatives, setInitiatives] = useState<Initiative[]>([
     { title: "One-click order status", owner: "Maya Chen", progress: 82, status: "On track", due: "18 Sep" },
@@ -62,6 +74,11 @@ export default function Home() {
   ]);
 
   const plan = useMemo(() => teamPlan(department), [department]);
+  const savedCoaching = coachingByDepartment[department];
+  const displayedObjectives = plan.objectives.map((objective) => ({
+    ...objective,
+    progress: savedCoaching ? objective.code === "S" ? savedCoaching.input.safety : objective.code === "Q" ? savedCoaching.input.quality : savedCoaching.input.delivery : objective.progress,
+  }));
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -78,6 +95,12 @@ export default function Home() {
     const initialDepartment = requestedDepartment || savedDepartment;
     if (initialDepartment && DEPARTMENTS.includes(initialDepartment as Department)) {
       setDepartment(initialDepartment as Department);
+    }
+    try {
+      const savedCoachingRecords = JSON.parse(window.localStorage.getItem(STRATEGY_COACHING_KEY) || "{}") as Record<string, SavedCoaching>;
+      if (savedCoachingRecords && typeof savedCoachingRecords === "object") setCoachingByDepartment(savedCoachingRecords);
+    } catch {
+      window.localStorage.removeItem(STRATEGY_COACHING_KEY);
     }
   }, []);
 
@@ -111,6 +134,38 @@ export default function Home() {
     window.localStorage.setItem(STRATEGY_DEPARTMENT_KEY, nextDepartment);
     setNotice(`${nextDepartment === "All departments" ? "Corporate" : nextDepartment} strategy deployment loaded`);
     window.setTimeout(() => setNotice(""), 3200);
+  }
+
+  async function generateDailyCoaching(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const input: StrategyCoachingInput = {
+      department,
+      safety: Number(form.get("safety")),
+      quality: Number(form.get("quality")),
+      delivery: Number(form.get("delivery")),
+      context: String(form.get("context") || "").trim(),
+    };
+    setCoachingStatus("loading");
+    setCoachingMessage("");
+    try {
+      const response = await fetch("/api/strategy/coaching", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const result = await response.json() as { coaching?: StrategyCoaching; provider?: string; error?: string };
+      if (!response.ok || !result.coaching) throw new Error(result.error || "Daily coaching could not be generated.");
+      const record: SavedCoaching = { input, coaching: result.coaching, provider: result.provider || "structured-coaching", generatedAt: new Date().toISOString() };
+      const nextRecords = { ...coachingByDepartment, [department]: record };
+      setCoachingByDepartment(nextRecords);
+      window.localStorage.setItem(STRATEGY_COACHING_KEY, JSON.stringify(nextRecords));
+      setCoachingStatus("idle");
+    } catch (error) {
+      setCoachingStatus("error");
+      setCoachingMessage(error instanceof Error ? error.message : "Daily coaching could not be generated.");
+    }
   }
 
   return (
@@ -244,7 +299,7 @@ export default function Home() {
               </div>
               <p className="north-copy">{plan.description}</p>
               <div className="objective-grid">
-                {plan.objectives.map((objective) => (
+                {displayedObjectives.map((objective) => (
                   <article className={`objective ${objective.tone}`} key={objective.code}>
                     <div className="objective-top">
                       <span className="objective-code">{objective.code}</span>
@@ -307,9 +362,26 @@ export default function Home() {
             <article className="card activity-card">
               <span className="section-kicker">This week</span>
               <h2>Momentum</h2>
-              <div className="activity-stat"><strong>12</strong><span>updates posted<br />across the plan</span></div>
-              <div className="avatar-stack"><span>MC</span><span>LW</span><span>NS</span><span>+8</span></div>
-              <p>Most active: <strong>Customer experience</strong></p>
+              <p className="coaching-intro">Enter today’s S/Q/D results and factual shift context to generate focused coaching for tomorrow.</p>
+              <form className="coaching-form" key={`${department}-${savedCoaching?.generatedAt || "new"}`} onSubmit={generateDailyCoaching}>
+                <div className="coaching-scores">
+                  <label><span>Safety %</span><input name="safety" type="number" min="0" max="100" step="0.1" defaultValue={savedCoaching?.input.safety ?? plan.objectives[0].progress} required /></label>
+                  <label><span>Quality %</span><input name="quality" type="number" min="0" max="100" step="0.1" defaultValue={savedCoaching?.input.quality ?? plan.objectives[1].progress} required /></label>
+                  <label><span>Delivery %</span><input name="delivery" type="number" min="0" max="100" step="0.1" defaultValue={savedCoaching?.input.delivery ?? plan.objectives[2].progress} required /></label>
+                </div>
+                <label className="coaching-context"><span>Today’s facts or blockers</span><textarea name="context" rows={3} maxLength={2000} defaultValue={savedCoaching?.input.context ?? ""} placeholder="For example: late material, repeat defect, open safety action…" /></label>
+                <button className="button button-primary coaching-submit" type="submit" disabled={coachingStatus === "loading"}>{coachingStatus === "loading" ? "Analysing…" : "Generate tomorrow’s coaching"}</button>
+              </form>
+              {coachingStatus === "error" && <p className="coaching-error" role="alert">{coachingMessage}</p>}
+              {savedCoaching && (
+                <div className="coaching-result" aria-live="polite">
+                  <div className="coaching-focus"><span>{savedCoaching.coaching.focusArea}</span><small>{savedCoaching.provider === "openai" ? "AI generated" : "Structured coaching"}</small></div>
+                  <p>{savedCoaching.coaching.summary}</p>
+                  <ol>{savedCoaching.coaching.suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ol>
+                  <blockquote>{savedCoaching.coaching.reflectionQuestion}</blockquote>
+                  <small>Generated {new Date(savedCoaching.generatedAt).toLocaleString("en-AU")} · Verify actions with the team before use.</small>
+                </div>
+              )}
             </article>
           </section>
         )}

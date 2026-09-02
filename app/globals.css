@@ -346,6 +346,27 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .avatar-stack span:nth-child(3) { background: var(--red); }
 .avatar-stack span:last-child { background: #e9edf1; color: var(--grey); }
 .activity-card p { color: var(--muted); font-size: 10px; }
+.activity-card .coaching-intro { margin: 12px 0 0; font-size: 11px; line-height: 1.55; }
+.coaching-form { display: grid; gap: 11px; margin-top: 15px; }
+.coaching-scores { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+.coaching-form label { display: grid; gap: 5px; }
+.coaching-form label > span { color: #4d555d; font-size: 8px; font-weight: 700; letter-spacing: .35px; text-transform: uppercase; }
+.coaching-form :is(input,textarea) { width: 100%; min-width: 0; border: 1px solid #d4d9de; border-radius: 6px; background: #fff; color: var(--ink); font: inherit; font-size: 10px; outline: none; }
+.coaching-form input { min-height: 36px; padding: 0 8px; }
+.coaching-form textarea { min-height: 66px; padding: 8px; line-height: 1.45; resize: vertical; }
+.coaching-form :is(input,textarea):focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(71,143,225,.14); }
+.coaching-submit { width: 100%; min-height: 38px; padding-inline: 10px; font-size: 10px; }
+.coaching-submit:disabled { cursor: wait; opacity: .68; }
+.activity-card .coaching-error { margin: 10px 0 0; padding: 9px; border: 1px solid #efc3c7; border-radius: 6px; background: #fff4f5; color: #b51632; line-height: 1.45; }
+.coaching-result { display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.coaching-focus { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.coaching-focus span { padding: 4px 8px; border-radius: 99px; background: var(--soft-blue); color: var(--blue-dark); font-size: 9px; font-weight: 700; }
+.coaching-focus small { color: var(--muted); font-size: 8px; font-weight: 700; }
+.activity-card .coaching-result p { margin: 0; color: #353b42; font-size: 10px; line-height: 1.55; }
+.coaching-result ol { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
+.coaching-result li { padding-left: 2px; color: #2f353b; font-size: 10px; line-height: 1.5; }
+.coaching-result blockquote { margin: 0; padding: 9px 10px; border-left: 3px solid var(--green); background: var(--soft-green); color: #3f4a34; font-size: 9px; line-height: 1.5; }
+.coaching-result > small { color: #626971; font-size: 8px; line-height: 1.45; }
 
 .single-view { padding-top: 28px; }
 .page-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
