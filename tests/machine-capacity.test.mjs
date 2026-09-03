@@ -19,7 +19,7 @@ test("landing panel renders an accessible live machine capability clustered bar 
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(page, /\/api\/machine-capacity/);
-  assert.match(page, /Our machines status at a glance/);
+  assert.match(page, /Our area capabilities/);
   assert.match(page, /Machine capability percentages/);
   assert.match(page, /clustered bar chart/);
   assert.match(page, /<rect/);

@@ -334,7 +334,7 @@ export default function HomePage() {
 
             <aside className="portal-support" aria-labelledby="support-title">
               <span>VIVAD SPARK</span>
-              <h2 id="support-title">Our machines status at a glance</h2>
+              <h2 id="support-title">Our area capabilities</h2>
               <p className="portal-capacity-heading">Live machine capability</p>
               {machineCapacityStatus === "loading" && <div className="portal-capacity-loading" role="status">Loading machine capability…</div>}
               {machineCapacityStatus === "error" && <p className="portal-capacity-error" role="alert">Machine capability data is temporarily unavailable.</p>}
