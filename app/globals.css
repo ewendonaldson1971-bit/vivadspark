@@ -880,7 +880,14 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 }
 @media (max-width: 920px) {
   .portal-dashboard-grid { grid-template-columns: 1fr; }
-  .portal-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .portal-metrics { grid-template-columns: 1fr; gap: 14px; }
+  .portal-qr-metric { min-height: 0; grid-column: span 1; padding: 10px; }
+  .portal-qr-metric img { width: 100%; height: auto; max-height: none; }
+  .portal-metric:not(.portal-qr-metric) { min-height: 118px; grid-template-columns: 54px minmax(0,1fr); gap: 14px; padding: 16px; }
+  .portal-metric > span:first-child { width: 54px; height: 54px; font-size: 22px; }
+  .portal-metric small { min-height: 0; font-size: 13px; }
+  .portal-metric strong { margin-top: 5px; font-size: 28px; }
+  .portal-metric em { margin-top: 6px; font-size: 10px; }
   .portal-support { display: block; }
   .portal-capacity-chart { max-width: 620px; margin-inline: auto; }
 }
@@ -901,9 +908,7 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .portal-destination small { margin-top: 5px; font-size: 11px; }
   .portal-destination > b { font-size: 30px; }
   .portal-dashboard { padding-top: 25px; }
-  .portal-metrics { grid-template-columns: 1fr 1fr; }
-  .portal-metric { grid-template-columns: 39px minmax(0,1fr); padding: 11px; }
-  .portal-metric > span:first-child { width: 39px; height: 39px; font-size: 18px; }
+  .portal-metrics { grid-template-columns: 1fr; }
   .portal-quick-actions { display: grid; }
   .portal-quick-action { justify-content: center; }
 }
