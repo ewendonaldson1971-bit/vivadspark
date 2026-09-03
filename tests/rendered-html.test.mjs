@@ -303,7 +303,11 @@ test("training videos support department libraries, durable completion records a
   assert.match(skillsStore, /videoCompletions/);
   assert.match(skillsMatrix, /Training videos watched/);
   assert.match(skillsMatrix, /SHARED_VIDEO_LIBRARIES/);
-  assert.match(skillsMatrix, /departmentVideoCompletions/);
+  assert.match(skillsMatrix, /\/api\/training\/videos/);
+  assert.match(skillsMatrix, /departmentVideos/);
+  assert.match(skillsMatrix, /videoCompletionsByCell/);
+  assert.match(skillsMatrix, /Not watched/);
+  assert.match(skillsMatrix, /Watched/);
   assert.match(schema, /pgTable\("vivadocs_video_completions"/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS vivadocs_video_completions/);
   assert.match(migration, /UNIQUE \(person_id, video_uid\)/);
@@ -314,7 +318,8 @@ test("training videos support department libraries, durable completion records a
   assert.match(report, /Page \$\{page\} of \$\{pages\}/);
   assert.match(report, /Training-and-Skills\.pdf/);
   assert.match(css, /\.training-skills-pdf/);
-  assert.match(css, /\.skills-video-table/);
+  assert.match(css, /\.skills-video-matrix/);
+  assert.match(css, /\.skills-video-cell\.watched/);
 });
 
 test("includes the interactive VivaDocs controlled-document workspace", async () => {

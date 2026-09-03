@@ -57,6 +57,13 @@ type VideoCompletion = {
   category: string;
   completedAt: string;
 };
+type TrainingVideo = {
+  id: string;
+  videoUid: string;
+  title: string;
+  category: string;
+  ready?: boolean;
+};
 type Dialog =
   | { kind: "add" }
   | { kind: "transfer" }
@@ -75,6 +82,9 @@ export function SkillsMatrix({
   const [people, setPeople] = useState<Person[]>([]);
   const [records, setRecords] = useState<TrainingRecord[]>([]);
   const [videoCompletions, setVideoCompletions] = useState<VideoCompletion[]>([]);
+  const [trainingVideos, setTrainingVideos] = useState<TrainingVideo[]>([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+  const [videosError, setVideosError] = useState("");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -82,6 +92,7 @@ export function SkillsMatrix({
 
   useEffect(() => {
     void refresh();
+    void refreshTrainingVideos();
   }, []);
 
   useEffect(() => {
@@ -110,14 +121,24 @@ export function SkillsMatrix({
     () => new Map(records.map((record) => [`${record.personId}:${record.sopId}`, record])),
     [records],
   );
-  const departmentVideoCompletions = useMemo(() => {
-    const personIds = new Set(departmentPeople.map((person) => person.id));
-    return videoCompletions.filter(
-      (record) =>
-        personIds.has(record.personId) &&
-        (record.category === department || SHARED_VIDEO_LIBRARIES.includes(record.category)),
-    );
-  }, [department, departmentPeople, videoCompletions]);
+  const departmentVideos = useMemo(() => {
+    const applies = (category: string) => category === department || SHARED_VIDEO_LIBRARIES.includes(category);
+    const videos = new Map<string, TrainingVideo>();
+    trainingVideos.filter((video) => applies(video.category)).forEach((video) => videos.set(video.videoUid || video.id, video));
+    videoCompletions.filter((record) => applies(record.category)).forEach((record) => {
+      if (!videos.has(record.videoUid)) videos.set(record.videoUid, {
+        id: record.videoUid,
+        videoUid: record.videoUid,
+        title: record.videoTitle,
+        category: record.category,
+      });
+    });
+    return Array.from(videos.values()).sort((a, b) => a.title.localeCompare(b.title));
+  }, [department, trainingVideos, videoCompletions]);
+  const videoCompletionsByCell = useMemo(
+    () => new Map(videoCompletions.map((record) => [`${record.personId}:${record.videoUid}`, record])),
+    [videoCompletions],
+  );
 
   async function refresh() {
     try {
@@ -137,6 +158,20 @@ export function SkillsMatrix({
       setError(cause instanceof Error ? cause.message : "Could not load skills data.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refreshTrainingVideos() {
+    try {
+      setVideosError("");
+      const response = await fetch("/api/training/videos", { cache: "no-store", credentials: "include" });
+      const result = await response.json() as { videos?: TrainingVideo[]; error?: string };
+      if (!response.ok) throw new Error(result.error || "Could not load the training video library.");
+      setTrainingVideos(result.videos ?? []);
+    } catch (cause) {
+      setVideosError(cause instanceof Error ? cause.message : "Could not load the training video library.");
+    } finally {
+      setVideosLoading(false);
     }
   }
 
@@ -305,31 +340,51 @@ export function SkillsMatrix({
         <div>
           <span>VIDEO LEARNING</span>
           <h3 id="skills-video-heading">Training videos watched</h3>
-          <p>Completed clips from {department} and the shared Operations, Training and Quality libraries.</p>
+          <p>Team completion against every clip in {department} and the shared Operations, Training and Quality libraries.</p>
         </div>
-        {!departmentVideoCompletions.length ? (
+        {videosError && <div className="skills-feedback error" role="alert">{videosError} Historical completions are still shown below.</div>}
+        {videosLoading ? (
+          <div className="vivadocs-empty" aria-live="polite">
+            <strong>Loading training video matrix…</strong>
+          </div>
+        ) : !departmentPeople.length ? (
           <div className="vivadocs-empty">
-            <strong>No completed videos recorded for {department}</strong>
-            <span>Watched clips will appear here when a team member completes them in Training Academy.</span>
+            <strong>No people in {department}</strong>
+            <span>Add a team member above to track their video learning.</span>
+          </div>
+        ) : !departmentVideos.length ? (
+          <div className="vivadocs-empty">
+            <strong>No training videos available for {department}</strong>
+            <span>Add a clip to the {department}, Operations, Training or Quality library.</span>
           </div>
         ) : (
-          <div className="skills-video-table-scroll" tabIndex={0} aria-label={`${department} completed training videos`}>
-            <table className="skills-video-table">
-              <thead><tr><th>Team member</th><th>Video</th><th>Library</th><th>Completed</th></tr></thead>
-              <tbody>
-                {departmentVideoCompletions.map((record) => {
-                  const person = people.find((item) => item.id === record.personId);
+          <div className="skills-table-scroll skills-video-matrix-scroll" tabIndex={0} aria-label={`${department} training videos watched matrix`}>
+            <div className="skills-table skills-video-matrix" style={{ "--skill-columns": departmentVideos.length } as CSSProperties}>
+              <div className="skills-head">
+                <span>Team member</span>
+                {departmentVideos.map((video) => (
+                  <span key={video.videoUid || video.id}>{video.title}<small>{video.category}</small></span>
+                ))}
+              </div>
+              {departmentPeople.map((person) => (
+                <div className="skills-row" key={person.id}>
+                  <span className="skills-person">
+                    <i>{initials(person.name)}</i>
+                    <span><strong>{person.name}</strong><small>{person.role}</small></span>
+                  </span>
+                  {departmentVideos.map((video) => {
+                    const completion = videoCompletionsByCell.get(`${person.id}:${video.videoUid || video.id}`);
                   return (
-                    <tr key={record.id}>
-                      <td>{person?.name ?? "Team member"}</td>
-                      <td>{record.videoTitle}</td>
-                      <td>{record.category}</td>
-                      <td>{new Date(record.completedAt).toLocaleDateString("en-AU")}</td>
-                    </tr>
+                      <span className={completion ? "skills-video-cell watched" : "skills-video-cell not-watched"} key={video.videoUid || video.id} title={completion ? `Completed ${new Date(completion.completedAt).toLocaleDateString("en-AU")}` : "No completion recorded"}>
+                        <i aria-hidden="true">{completion ? "✓" : "!"}</i>
+                        <strong>{completion ? "Watched" : "Not watched"}</strong>
+                        {completion && <small>{new Date(completion.completedAt).toLocaleDateString("en-AU")}</small>}
+                      </span>
                   );
-                })}
-              </tbody>
-            </table>
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
