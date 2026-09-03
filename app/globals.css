@@ -1842,6 +1842,29 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .vivadocs-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 18px; background: rgba(31,36,41,.58); }.vivadocs-modal { width: min(480px,96vw); padding: 26px; border-radius: 10px; background: #fff; box-shadow: 0 24px 70px rgba(25,30,35,.25); }.vivadocs-modal > div:first-child { display: flex; align-items: center; justify-content: space-between; color: var(--blue); font-size: 8px; font-weight: 700; letter-spacing: .9px; }.vivadocs-modal > div:first-child button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: #80858b; font-size: 18px; }.vivadocs-modal h2 { margin-top: 12px; font-size: 25px; }.vivadocs-modal > p { margin: 9px 0 20px; color: #7d8288; font-size: 9px; line-height: 1.55; }.vivadocs-modal label { display: grid; gap: 6px; margin-top: 12px; }.vivadocs-modal label > span { color: #6d7278; font-size: 8px; font-weight: 700; }.vivadocs-modal input { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; color: #4f545a; font-size: 10px; outline: 0; }.vivadocs-modal-note { display: flex; gap: 11px; margin-top: 17px; padding: 12px; border-radius: 7px; background: var(--soft-blue); color: #617488; font-size: 8px; }.vivadocs-modal-note b { color: var(--blue-dark); }.vivadocs-modal footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }.vivadocs-modal footer button { min-height: 39px; padding: 0 16px; border: 1px solid var(--line); border-radius: 99px; background: #fff; color: #6f747a; font-size: 8px; font-weight: 700; }.vivadocs-modal footer button[type="submit"] { border-color: var(--blue); background: var(--blue); color: #fff; }
 .vivadocs-toast { position: fixed; right: 22px; bottom: 22px; z-index: 120; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 17px; border-radius: 8px; background: #424950; color: #fff; font-size: 9px; font-weight: 700; box-shadow: 0 15px 35px rgba(30,35,40,.2); animation: fade-in .2s ease; }.vivadocs-toast i { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--green); font-style: normal; }
 
+/* Stable SOP sharing for Job Talk and other devices */
+.sop-action-stack .sop-share-trigger { justify-content: space-between; border-color: #b8d0ee; color: var(--blue); }
+.sop-share-trigger b { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--soft-blue); color: var(--blue); font-size: 11px; }
+.sop-share-modal { width: min(620px,96vw); max-height: min(90dvh,760px); overflow-y: auto; }
+.sop-share-summary { display: grid; gap: 5px; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
+.sop-share-summary span, .sop-share-destinations > span { color: var(--red); font-size: 8px; font-weight: 800; letter-spacing: .9px; }
+.sop-share-summary strong { color: #3d444c; font-size: 15px; }
+.sop-share-modal input { width: 100%; }
+.sop-share-modal .sop-share-primary { width: 100%; min-height: 44px; margin-top: 10px; border: 1px solid var(--blue); border-radius: 99px; background: #fff; color: var(--blue); font-size: 10px; font-weight: 800; }
+.sop-share-destinations { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.sop-share-destinations h3 { margin-top: 7px; color: #3d444c; font-size: 17px; }
+.sop-share-destinations p { margin-top: 8px; color: #6e747b; font-size: 10px; line-height: 1.55; }
+.sop-share-destinations > div { display: flex; gap: 9px; margin-top: 13px; flex-wrap: wrap; }
+.sop-share-destinations button { min-height: 38px; padding: 0 15px; border: 1px solid var(--blue); border-radius: 99px; background: #fff; color: var(--blue); font-size: 9px; font-weight: 800; }
+.sop-share-status { min-height: 20px; margin: 13px 0 0 !important; color: #568c0d !important; font-weight: 700; }
+.sop-share-modal :is(button,input):focus-visible, .sop-share-trigger:focus-visible { outline: 3px solid rgba(42,112,201,.3); outline-offset: 2px; }
+
+@media (max-width: 520px) {
+  .sop-share-modal { padding: 20px; }
+  .sop-share-destinations > div { display: grid; }
+  .sop-share-destinations button { width: 100%; }
+}
+
 /* VivaDocs SOP creation, controlled detail view and export workflow */
 .sop-workflow-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; background: rgba(28,32,37,.68); backdrop-filter: blur(3px); }
 .sop-workflow { width: min(1120px,100%); height: min(94dvh,940px); align-self: center; justify-self: center; overflow-y: auto; overscroll-behavior: contain; border-radius: 14px; background: #f5f6f8; box-shadow: 0 30px 90px rgba(16,21,27,.32); }

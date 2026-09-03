@@ -8,6 +8,7 @@ import {
 } from "../components/workspace-navigation";
 import { SopWorkflow } from "./sop-workflow";
 import { SopPdfActions } from "./sop-pdf-actions";
+import { SopShareActions } from "./sop-share-actions";
 import { SkillsMatrix } from "./skills-matrix";
 
 const DEPARTMENTS = [
@@ -146,10 +147,12 @@ export default function VivaDocsPage() {
   const [runPickerLoading, setRunPickerLoading] = useState(false);
   const [toast, setToast] = useState("");
   const librarySearchRef = useRef<HTMLInputElement>(null);
+  const sharedProcedureRef = useRef("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedView = params.get("view");
+    sharedProcedureRef.current = params.get("procedure")?.trim() ?? "";
     const viewByRoute: Record<string, View> = {
       library: "SOP library",
       skills: "Skills matrix",
@@ -170,6 +173,23 @@ export default function VivaDocsPage() {
       if (focusTimeout) window.clearTimeout(focusTimeout);
     };
   }, []);
+
+  useEffect(() => {
+    const requestedProcedure = sharedProcedureRef.current;
+    if (!requestedProcedure || sops.length === 0) return;
+    const matchingSop = sops.find(
+      (sop) =>
+        sop.reference.toLowerCase() === requestedProcedure.toLowerCase() ||
+        sop.id === requestedProcedure,
+    );
+    if (!matchingSop) return;
+    sharedProcedureRef.current = "";
+    setQuery("");
+    setStatus("All statuses");
+    setDepartment("All departments");
+    setView("SOP library");
+    setSelectedId(matchingSop.id);
+  }, [sops]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -859,6 +879,7 @@ export default function VivaDocsPage() {
                       </button>
                     )}
                     <SopPdfActions sop={selected} compact />
+                    <SopShareActions sop={selected} />
                     <button
                       className="secondary"
                       type="button"
