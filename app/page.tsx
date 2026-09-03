@@ -309,6 +309,23 @@ export default function HomePage() {
               <div className="portal-metrics">
                 {dashboardCards.map((card) => {
                   const metric = metrics[card.key];
+                  if (card.key === "compliance") {
+                    return (
+                      <figure className="portal-metric portal-qr-metric" key={card.key}>
+                        {/* Preserve the source QR pixels; image optimisation can soften scanner edges. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/vivad-purchasing-qr.png"
+                          alt="Vivad Purchasing QR code"
+                          width="1223"
+                          height="711"
+                        />
+                        <figcaption className="sr-only">
+                          Scan this QR code to open the Vivad Purchasing workflow.
+                        </figcaption>
+                      </figure>
+                    );
+                  }
                   return (
                     <Link className={`portal-metric ${card.tone}`} href={card.href} key={card.key}>
                       <span aria-hidden="true">{card.icon}</span>
