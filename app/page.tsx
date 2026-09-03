@@ -91,16 +91,18 @@ function metricFromError(): DashboardMetric {
 
 function MachineCapacityChart({ machines }: { machines: MachineCapacity[] }) {
   const width = 300;
-  const height = 145;
+  const height = 170;
   const left = 27;
   const right = 8;
   const top = 13;
-  const bottom = 28;
+  const bottom = 42;
   const chartWidth = width - left - right;
   const chartHeight = height - top - bottom;
-  const points = machines.map((machine, index) => ({
+  const clusterWidth = chartWidth / machines.length;
+  const barWidth = Math.min(19, clusterWidth * 0.66);
+  const bars = machines.map((machine, index) => ({
     ...machine,
-    x: left + (machines.length === 1 ? chartWidth / 2 : index * chartWidth / (machines.length - 1)),
+    x: left + index * clusterWidth + (clusterWidth - barWidth) / 2,
     y: top + (100 - machine.capacity) / 100 * chartHeight,
   }));
 
@@ -108,17 +110,16 @@ function MachineCapacityChart({ machines }: { machines: MachineCapacity[] }) {
     <div className="portal-capacity-chart">
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="capacity-chart-title capacity-chart-description">
         <title id="capacity-chart-title">Machine capability percentages</title>
-        <desc id="capacity-chart-description">A line graph showing the current percentage capability for every machine in the linked Google Sheet.</desc>
+        <desc id="capacity-chart-description">A clustered bar chart showing the current percentage capability for every machine in the linked Google Sheet.</desc>
         {[0, 50, 100].map((value) => {
           const y = top + (100 - value) / 100 * chartHeight;
           return <g key={value}><line x1={left} x2={width - right} y1={y} y2={y} className="capacity-gridline" /><text x={left - 5} y={y + 3} textAnchor="end" className="capacity-axis-label">{value}%</text></g>;
         })}
-        <polyline points={points.map((point) => `${point.x},${point.y}`).join(" ")} className="capacity-line" />
-        {points.map((point) => (
-          <g key={point.machine}>
-            <circle cx={point.x} cy={point.y} r="4" className="capacity-point" />
-            <text x={point.x} y={Math.max(9, point.y - 8)} textAnchor="middle" className="capacity-value">{point.capacity}%</text>
-            <text x={point.x} y={height - 8} textAnchor="middle" className="capacity-machine-label">{point.machine.length > 8 ? `${point.machine.slice(0, 7)}…` : point.machine}</text>
+        {bars.map((bar) => (
+          <g key={bar.machine}>
+            <rect x={bar.x} y={bar.y} width={barWidth} height={top + chartHeight - bar.y} rx="2" className="capacity-bar" />
+            <text x={bar.x + barWidth / 2} y={Math.max(9, bar.y - 6)} textAnchor="middle" className="capacity-value">{bar.capacity}%</text>
+            <text x={bar.x + barWidth / 2} y={height - 25} textAnchor="end" transform={`rotate(-42 ${bar.x + barWidth / 2} ${height - 25})`} className="capacity-machine-label">{bar.machine.length > 9 ? `${bar.machine.slice(0, 8)}…` : bar.machine}</text>
           </g>
         ))}
       </svg>
@@ -333,7 +334,7 @@ export default function HomePage() {
 
             <aside className="portal-support" aria-labelledby="support-title">
               <span>VIVAD SPARK</span>
-              <h2 id="support-title">Everything your team needs, in one place.</h2>
+              <h2 id="support-title">Our machines status at a glance</h2>
               <p className="portal-capacity-heading">Live machine capability</p>
               {machineCapacityStatus === "loading" && <div className="portal-capacity-loading" role="status">Loading machine capability…</div>}
               {machineCapacityStatus === "error" && <p className="portal-capacity-error" role="alert">Machine capability data is temporarily unavailable.</p>}
