@@ -22,8 +22,6 @@ const TRAINING_STATUSES = [
   "Trainer",
   "Expired",
 ] as const;
-const SHARED_VIDEO_LIBRARIES = ["Operations", "Training", "Quality"];
-
 type TrainingStatus = (typeof TRAINING_STATUSES)[number];
 type Department = (typeof DEPARTMENTS)[number];
 type MatrixSop = {
@@ -122,10 +120,9 @@ export function SkillsMatrix({
     [records],
   );
   const departmentVideos = useMemo(() => {
-    const applies = (category: string) => category === department || SHARED_VIDEO_LIBRARIES.includes(category);
     const videos = new Map<string, TrainingVideo>();
-    trainingVideos.filter((video) => applies(video.category)).forEach((video) => videos.set(video.videoUid || video.id, video));
-    videoCompletions.filter((record) => applies(record.category)).forEach((record) => {
+    trainingVideos.forEach((video) => videos.set(video.videoUid || video.id, video));
+    videoCompletions.forEach((record) => {
       if (!videos.has(record.videoUid)) videos.set(record.videoUid, {
         id: record.videoUid,
         videoUid: record.videoUid,
@@ -134,7 +131,7 @@ export function SkillsMatrix({
       });
     });
     return Array.from(videos.values()).sort((a, b) => a.title.localeCompare(b.title));
-  }, [department, trainingVideos, videoCompletions]);
+  }, [trainingVideos, videoCompletions]);
   const videoCompletionsByCell = useMemo(
     () => new Map(videoCompletions.map((record) => [`${record.personId}:${record.videoUid}`, record])),
     [videoCompletions],
@@ -340,7 +337,7 @@ export function SkillsMatrix({
         <div>
           <span>VIDEO LEARNING</span>
           <h3 id="skills-video-heading">Training videos watched</h3>
-          <p>Team completion against every clip in {department} and the shared Operations, Training and Quality libraries.</p>
+          <p>{department} team completion against every video currently available in the Training Academy.</p>
         </div>
         {videosError && <div className="skills-feedback error" role="alert">{videosError} Historical completions are still shown below.</div>}
         {videosLoading ? (
@@ -354,8 +351,8 @@ export function SkillsMatrix({
           </div>
         ) : !departmentVideos.length ? (
           <div className="vivadocs-empty">
-            <strong>No training videos available for {department}</strong>
-            <span>Add a clip to the {department}, Operations, Training or Quality library.</span>
+            <strong>No Training Academy videos available</strong>
+            <span>Add a training video and it will appear here automatically for every department.</span>
           </div>
         ) : (
           <div className="skills-table-scroll skills-video-matrix-scroll" tabIndex={0} aria-label={`${department} training videos watched matrix`}>

@@ -313,7 +313,8 @@ test("training videos support department libraries, durable completion records a
   assert.match(skillsStore, /ON CONFLICT \(person_id, video_uid\) DO UPDATE/);
   assert.match(skillsStore, /videoCompletions/);
   assert.match(skillsMatrix, /Training videos watched/);
-  assert.match(skillsMatrix, /SHARED_VIDEO_LIBRARIES/);
+  assert.match(skillsMatrix, /trainingVideos\.forEach/);
+  assert.doesNotMatch(skillsMatrix, /SHARED_VIDEO_LIBRARIES/);
   assert.match(skillsMatrix, /\/api\/training\/videos/);
   assert.match(skillsMatrix, /departmentVideos/);
   assert.match(skillsMatrix, /videoCompletionsByCell/);
