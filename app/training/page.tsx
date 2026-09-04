@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChangeEvent, DragEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MobileWorkspaceNavigation, navigationItem } from "../components/workspace-navigation";
 import { buildPersonSkillsPdf } from "./person-skills-pdf";
+import { TrainingShareActions } from "./training-share-actions";
 
 type Course = {
   id: string;
@@ -1155,10 +1156,13 @@ export default function TrainingPage() {
             <h2>{activeCourse.title}</h2>
             <p>{activeCourse.description}</p>
             <div className="training-owner"><span>{activeCourse.owner.slice(0, 2).toUpperCase()}</span><div><small>CONTENT OWNER</small><strong>{activeCourse.owner}</strong></div></div>
-            <button className={completed.includes(activeCourse.id) ? "module-complete completed" : "module-complete"} type="button" onClick={() => void markComplete(activeCourse)} disabled={!selectedPersonId || completingId === activeCourse.id} title={!selectedPersonId ? "Select the person watching to record progress" : undefined}>
-              <span>{completed.includes(activeCourse.id) ? "✓" : "○"}</span>
-              {completed.includes(activeCourse.id) ? "Completed" : "Mark as complete"}
-            </button>
+            <div className="training-feature-actions">
+              <TrainingShareActions course={activeCourse} />
+              <button className={completed.includes(activeCourse.id) ? "module-complete completed" : "module-complete"} type="button" onClick={() => void markComplete(activeCourse)} disabled={!selectedPersonId || completingId === activeCourse.id} title={!selectedPersonId ? "Select the person watching to record progress" : undefined}>
+                <span>{completed.includes(activeCourse.id) ? "✓" : "○"}</span>
+                {completed.includes(activeCourse.id) ? "Completed" : "Mark as complete"}
+              </button>
+            </div>
           </article>
         </section>
 

@@ -1568,7 +1568,12 @@ select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
 .training-owner small, .training-owner strong { display: block; }
 .training-owner small { color: #9fa3a8; font-size: 7px; font-weight: 700; letter-spacing: .6px; }
 .training-owner strong { margin-top: 3px; color: #fff; font-size: 9px; }
-.module-complete { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: auto; border: 1px solid #777b80; border-radius: 7px; background: transparent; color: #fff; font-size: 10px; font-weight: 700; }
+.training-feature-actions { display: grid; gap: 10px; margin-top: auto; }
+.training-share-trigger { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 15px; border: 1px solid #8db8e8; border-radius: 7px; background: #fff; color: var(--blue-dark); font-size: 10px; font-weight: 700; cursor: pointer; }
+.training-share-trigger b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--soft-blue); color: var(--blue); font-size: 12px; }
+.training-share-trigger:hover { background: var(--soft-blue); }
+.training-share-trigger:focus-visible { outline: 3px solid rgba(71,143,225,.4); outline-offset: 2px; }
+.module-complete { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #777b80; border-radius: 7px; background: transparent; color: #fff; font-size: 10px; font-weight: 700; }
 .module-complete.completed { border-color: var(--green); background: rgba(124,191,29,.12); color: #b7e07d; }
 .module-complete:disabled { cursor: not-allowed; opacity: .55; }
 .module-complete > span { font-size: 16px; }
