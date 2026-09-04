@@ -59,12 +59,14 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   assert.match(page, /Knowledge/);
   assert.match(page, /formatSydneyPortalDateTime/);
   assert.match(page, /Current date and time in Sydney/);
-  assert.match(page, /src="\/vivad-purchasing-qr\.png"/);
-  assert.match(page, /alt="Vivad Purchasing QR code"/);
+  assert.match(page, /src: "\/vivad-purchasing-qr\.png"/);
+  assert.match(page, /alt: "Vivad Purchasing QR code"/);
+  assert.match(page, /src: "\/toolbox-talk-qr\.png"/);
+  assert.match(page, /alt: "Toolbox Talk Minutes QR code"/);
   assert.match(css, /\.portal-qr-metric img/);
   assert.match(css, /object-fit: contain/);
   assert.match(css, /@media \(max-width: 920px\)[\s\S]*?\.portal-metrics \{ grid-template-columns: 1fr/);
-  assert.match(css, /\.portal-qr-metric img \{ width: 100%; height: auto; max-height: none/);
+  assert.match(css, /\.portal-qr-metric img \{ width: 100%; height: 100%; max-height: none; object-fit: contain/);
   assert.match(css, /\.portal-metric small \{ min-height: 0; font-size: 13px/);
   assert.match(page, /href: "\/quality"/);
   assert.match(page, /href: "\/vivadocs\?view=skills"/);

@@ -309,19 +309,36 @@ export default function HomePage() {
               <div className="portal-metrics">
                 {dashboardCards.map((card) => {
                   const metric = metrics[card.key];
-                  if (card.key === "compliance") {
+                  const qrCard = card.key === "compliance"
+                    ? {
+                        src: "/vivad-purchasing-qr.png",
+                        alt: "Vivad Purchasing QR code",
+                        caption: "Scan this QR code to open the Vivad Purchasing workflow.",
+                        width: 375,
+                        height: 352,
+                      }
+                    : card.key === "reviews"
+                      ? {
+                          src: "/toolbox-talk-qr.png",
+                          alt: "Toolbox Talk Minutes QR code",
+                          caption: "Scan this QR code to open Toolbox Talk Minutes.",
+                          width: 253,
+                          height: 350,
+                        }
+                      : null;
+                  if (qrCard) {
                     return (
                       <figure className="portal-metric portal-qr-metric" key={card.key}>
                         {/* Preserve the source QR pixels; image optimisation can soften scanner edges. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src="/vivad-purchasing-qr.png"
-                          alt="Vivad Purchasing QR code"
-                          width="1223"
-                          height="711"
+                          src={qrCard.src}
+                          alt={qrCard.alt}
+                          width={qrCard.width}
+                          height={qrCard.height}
                         />
                         <figcaption className="sr-only">
-                          Scan this QR code to open the Vivad Purchasing workflow.
+                          {qrCard.caption}
                         </figcaption>
                       </figure>
                     );
