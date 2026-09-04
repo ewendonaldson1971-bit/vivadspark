@@ -67,6 +67,8 @@ test("landing dashboard uses live metrics and accessible workspace destinations"
   assert.match(css, /object-fit: contain/);
   assert.match(css, /@media \(max-width: 920px\)[\s\S]*?\.portal-metrics \{ grid-template-columns: 1fr/);
   assert.match(css, /\.portal-qr-metric img \{ width: 100%; height: 100%; max-height: none; object-fit: contain/);
+  assert.match(page, /portal-qr-metric-\$\{card\.key\}/);
+  assert.match(css, /\.portal-qr-metric-reviews img \{ width: auto; height: auto; max-width: 92%; max-height: 92%; object-position: center/);
   assert.match(css, /\.portal-metric small \{ min-height: 0; font-size: 13px/);
   assert.match(page, /href: "\/quality"/);
   assert.match(page, /href: "\/vivadocs\?view=skills"/);

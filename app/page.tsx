@@ -328,7 +328,10 @@ export default function HomePage() {
                       : null;
                   if (qrCard) {
                     return (
-                      <figure className="portal-metric portal-qr-metric" key={card.key}>
+                      <figure
+                        className={`portal-metric portal-qr-metric portal-qr-metric-${card.key}`}
+                        key={card.key}
+                      >
                         {/* Preserve the source QR pixels; image optimisation can soften scanner edges. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
